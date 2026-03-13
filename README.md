@@ -1,60 +1,67 @@
 # Help Desk - Sistema de Chamados (Node.js)
 
-Sistema simples de abertura e acompanhamento de chamados para uso interno.
+# Help Desk
+
+Sistema de chamados interno com foco em operação multiunidade, controle por perfil e visão gerencial em tempo real.
+
+## Visão Geral
+
+O **Help Desk** é uma aplicação web para abertura, acompanhamento e gestão de chamados técnicos.  
+Foi desenvolvido para cenários com múltiplas unidades (ex.: AMEP e Operadora), com separação de escopo por operadora, relatórios administrativos e controle de SLA.
+
+## Principais Funcionalidades
+
+- Abertura e acompanhamento de chamados.
+- Comentários por chamado.
+- Gestão de status com fluxo operacional:
+  - `aberto`
+  - `em_andamento`
+  - `pausa`
+  - `aguardando_usuario`
+  - `resolvido`
+  - `fechado`
+- Controle de SLA com pausa:
+  - ao entrar em `pausa`, o SLA para de contar
+  - ao sair de `pausa`, o tempo volta a contar
+- Painel administrativo completo:
+  - gestão de usuários
+  - gestão de setores
+  - gestão de categorias
+  - atribuição rápida de responsável e status
+- Modo multioperadora:
+  - separação de dados por operadora
+  - visão específica para admin de operadora
+- Relatórios:
+  - chamados por status
+  - chamados por prioridade
+  - tendência mensal
+  - tempo médio de resolução
+  - chamados por setor
+  - dias de atendimento por setor
+- Console SQL administrativo (restrito), com escopo AMEP/Operadora.
 
 ## Tecnologias
 
-- Node.js + Express
-- SQLite (arquivo local `helpdesk.db`)
-- EJS para views
-- Bootstrap 5 para layout
+- Node.js
+- Express
+- SQLite (`sqlite3`)
+- EJS
+- Bootstrap 5
+- `express-session`
+- `csurf`
+- `bcryptjs`
 
-## Como rodar
+## Estrutura do Projeto
 
-1. Instalar dependências (na pasta do projeto `Help-Desk`):
-
-```bash
-npm install
-```
-
-1. Iniciar o servidor:
-
-```bash
-npm start
-```
-
-1. Acessar no navegador:
-
-- `http://localhost:3000`
-
-## Variaveis de ambiente
-
-- `PORT` (opcional): porta do servidor (padrao: `3000`)
-- `NODE_ENV` (opcional): use `production` em ambiente de producao
-- `SESSION_SECRET` (obrigatoria em producao): segredo da sessao
-- `ADMIN_EMAIL` (opcional): e-mail do admin inicial quando banco estiver vazio (padrao: `admin@empresa.com`)
-- `ADMIN_PASSWORD` (opcional, recomendado): senha do admin inicial (minimo de 12 caracteres)
-
-Exemplo no PowerShell:
-
-```powershell
-$env:NODE_ENV="production"
-$env:SESSION_SECRET="troque-por-um-segredo-forte"
-npm start
-```
-
-## Login inicial
-
-- Se o banco estiver vazio no primeiro start, o sistema cria um admin inicial.
-- E-mail padrao: `admin@empresa.com` (ou `ADMIN_EMAIL`, se informado).
-- Senha:
-  - se `ADMIN_PASSWORD` for informada (>= 12 caracteres), ela sera usada;
-  - caso contrario, o sistema gera uma senha aleatoria forte e exibe no log do servidor.
-- Recomendacao: definir `ADMIN_PASSWORD` e alterar a senha apos o primeiro login.
-
-Com esse usuário você pode:
-
-- Abrir chamados
-- Ver todos os chamados
-- Cadastrar **setores** e **categorias** em `/admin`
+```txt
+src/
+  server.js
+  db.js
+  constants/
+  middlewares/
+views/
+public/
+scripts/
+package.json
+README.md
 
