@@ -1,0 +1,779 @@
+<%
+  const escapeHtml = (str) => {
+    if (str == null) return '';
+    return String(str)
+      .replace(/&/g, '&amp;')
+      .replace(/</g, '&lt;')
+      .replace(/>/g, '&gt;')
+      .replace(/"/g, '&quot;')
+      .replace(/'/g, '&#x27;');
+  };
+  const safeStatus     = JSON.stringify(statusData     || []);
+  const safePriority   = JSON.stringify(priorityData   || []);
+  const safeWeekday    = JSON.stringify(weekdayData    || []);
+  const safeMonthly    = JSON.stringify(monthlyData    || []);
+  const safeCategories = JSON.stringify(categoriesData || []);
+  const safeAgents     = JSON.stringify(agentsData     || []);
+  const safeSectors      = JSON.stringify(sectorsData      || []);
+  const safeSectorWeekdays = JSON.stringify(sectorWeekdaysData || []);
+  const safeStatusHtml = escapeHtml(safeStatus);
+  const safePriorityHtml = escapeHtml(safePriority);
+  const safeWeekdayHtml = escapeHtml(safeWeekday);
+  const safeMonthlyHtml = escapeHtml(safeMonthly);
+  const safeCategoriesHtml = escapeHtml(safeCategories);
+  const safeAgentsHtml = escapeHtml(safeAgents);
+  const safeSectorsHtml = escapeHtml(safeSectors);
+  const safeSectorWeekdaysHtml = escapeHtml(safeSectorWeekdays);
+  const normalize = (value) => String(value || "").trim().toLowerCase();
+  const isDbConsoleAllowed = !!(
+    currentUser &&
+    currentUser.role === "admin" &&
+    currentUser.operadora_id === null &&
+    (normalize(currentUser.name) === "marcos pereira" || normalize(currentUser.email).includes("marcos.pereira"))
+  );
+  let countAbertos = 0, countAndamento = 0, countResolvidos = 0;
+  const weekdayNames = ["Domingo", "Segunda-feira", "Terça-feira", "Quarta-feira", "Quinta-feira", "Sexta-feira", "Sábado"];
+  const topWeekdayNumber = topWeekday && topWeekday.weekday != null ? Number(topWeekday.weekday) : null;
+  const topWeekdayName = Number.isInteger(topWeekdayNumber) && topWeekdayNumber >= 0 && topWeekdayNumber < weekdayNames.length
+    ? weekdayNames[topWeekdayNumber]
+    : "Sem dados";
+  const topWeekdayTotal = topWeekday && topWeekday.total != null ? Number(topWeekday.total) : 0;
+  (statusData || []).forEach(row => {
+    if (row.status === 'aberto')       countAbertos    += row.total;
+    if (row.status === 'em_andamento' || row.status === 'pausa') countAndamento  += row.total;
+    if (row.status === 'resolvido' || row.status === 'fechado') countResolvidos += row.total;
+  });
+  const avgTimeHtml = avgTime !== null
+    ? '<div class="chart-card chart-card--highlight chart-card--highlight-compact"><div class="chart-card-highlight-wrap"><div><p class="chart-card-subtitle" style="margin:0 0 0.25rem">Tempo m&eacute;dio de resolu&ccedil;&atilde;o</p><div class="highlight-value">' + avgTime + 'h</div></div><div class="highlight-icon"><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="10"/><polyline points="12 6 12 12 16 14"/></svg></div></div></div>'
+    : '';
+%>
+<%- include("layout", { title: "Relatórios — Help Desk", body: `
+
+<style>
+  .rel-shell {
+    position: relative;
+  }
+  .rel-shell::before {
+    content: "";
+    position: absolute;
+    inset: -1rem -1rem auto;
+    height: 150px;
+    background:
+      radial-gradient(circle at 12% 18%, rgba(43,111,187,0.20), transparent 32%),
+      radial-gradient(circle at 86% 12%, rgba(13,148,136,0.16), transparent 28%),
+      linear-gradient(180deg, rgba(255,255,255,0.95), rgba(255,255,255,0));
+    pointer-events: none;
+    z-index: 0;
+  }
+  .rel-shell > * {
+    position: relative;
+    z-index: 1;
+  }
+  .rel-header {
+    margin-bottom: 1rem;
+    display: flex;
+    align-items: flex-start;
+    justify-content: space-between;
+    gap: 1rem;
+    padding: 1rem 1.1rem;
+    border-radius: 16px;
+    background: linear-gradient(135deg, rgba(255,255,255,0.96), rgba(236,244,252,0.92));
+    border: 1px solid rgba(201,215,231,0.78);
+    box-shadow: 0 10px 24px rgba(18,58,111,0.08);
+    backdrop-filter: blur(10px);
+  }
+  .rel-header h1 {
+    font-size: 1.45rem; font-weight: 800;
+    background: linear-gradient(135deg, #2b6fbb, #123a6f);
+    -webkit-background-clip: text; -webkit-text-fill-color: transparent; background-clip: text;
+    margin: 0 0 0.2rem;
+  }
+  .rel-header p { color: #64748b; font-size: 0.86rem; margin: 0; max-width: 560px; }
+  .rel-header-badge {
+    padding: 0.5rem 0.8rem;
+    border-radius: 999px;
+    background: rgba(18,58,111,0.08);
+    color: #123a6f;
+    font-size: 0.76rem;
+    font-weight: 700;
+    white-space: nowrap;
+  }
+  .kpi-grid { display: grid; grid-template-columns: repeat(4, minmax(0, 1fr)); gap: 0.75rem; margin-bottom: 0.9rem; }
+  @media (max-width: 1200px) { .kpi-grid { grid-template-columns: repeat(2, minmax(0, 1fr)); } }
+  @media (max-width: 900px) { .kpi-grid { grid-template-columns: repeat(2, minmax(0, 1fr)); } }
+  @media (max-width: 680px) {
+    .rel-header { flex-direction: column; }
+  }
+  @media (max-width: 500px) { .kpi-grid { grid-template-columns: 1fr; } }
+  .kpi-card {
+    position: relative;
+    overflow: hidden;
+    background: linear-gradient(180deg, #ffffff, #f6fafe); border-radius: 14px; padding: 0.95rem 1rem;
+    box-shadow: 0 8px 20px rgba(19,58,111,0.08); border: 1px solid #e8eef6;
+    display: flex; flex-direction: column; gap: 0.3rem;
+  }
+  .kpi-card::after {
+    content: "";
+    position: absolute;
+    width: 90px;
+    height: 90px;
+    border-radius: 50%;
+    right: -35px;
+    top: -45px;
+    background: radial-gradient(circle, rgba(43,111,187,0.16), rgba(43,111,187,0));
+  }
+  .kpi-icon {
+    width: 36px; height: 36px; border-radius: 10px;
+    display: flex; align-items: center; justify-content: center; margin-bottom: 0.5rem;
+    box-shadow: inset 0 1px 0 rgba(255,255,255,0.4);
+  }
+  .kpi-icon svg { width: 17px; height: 17px; }
+  .kpi-icon--blue   { background: #e8f0fb; color: #2b6fbb; }
+  .kpi-icon--yellow { background: #fff8e1; color: #f59e0b; }
+  .kpi-icon--green  { background: #e8faf3; color: #10b981; }
+  .kpi-icon--teal   { background: #e0f7f4; color: #0d9488; }
+  .kpi-value { font-size: 1.45rem; font-weight: 800; color: #123a6f; line-height: 1; letter-spacing: -0.03em; }
+  .kpi-label { font-size: 0.76rem; color: #64748b; font-weight: 600; }
+  .kpi-helper { font-size: 0.72rem; color: #94a3b8; font-weight: 600; }
+  .charts-grid-top { display: grid; grid-template-columns: 1.05fr 0.95fr 0.95fr; gap: 0.9rem; margin-bottom: 0.9rem; }
+  .charts-grid-bottom { display: grid; grid-template-columns: 1.2fr 1fr 1fr; gap: 0.9rem; margin-bottom: 0.9rem; align-items: start; }
+  .charts-grid-stack { display: grid; gap: 0.9rem; }
+  @media (max-width: 1100px) {
+    .charts-grid-top,
+    .charts-grid-bottom { grid-template-columns: 1fr; }
+  }
+  .chart-card {
+    position: relative;
+    overflow: hidden;
+    background: linear-gradient(180deg, rgba(255,255,255,0.96), rgba(246,250,254,0.94));
+    border-radius: 16px; padding: 1rem 1.05rem;
+    box-shadow: 0 10px 24px rgba(19,58,111,0.08); border: 1px solid #e8eef6;
+    backdrop-filter: blur(10px);
+  }
+  .chart-card::before {
+    content: "";
+    position: absolute;
+    inset: 0 auto auto 0;
+    width: 100%;
+    height: 4px;
+    background: linear-gradient(90deg, #2b6fbb, #0d9488);
+    opacity: 0.95;
+  }
+  .chart-card--highlight {
+    background: linear-gradient(135deg, #123a6f, #1b5eaa 65%, #2b6fbb);
+    border: 0;
+    box-shadow: 0 14px 28px rgba(18,58,111,0.20);
+    color: #fff;
+  }
+  .chart-card--highlight-compact {
+    padding: 0.85rem 1rem;
+  }
+  .chart-card-header {
+    margin-bottom: 0.75rem;
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 0.75rem;
+  }
+  .chart-card-kicker {
+    display: inline-flex;
+    align-items: center;
+    gap: 0.35rem;
+    padding: 0.22rem 0.45rem;
+    border-radius: 999px;
+    background: rgba(43,111,187,0.08);
+    color: #2b6fbb;
+    font-size: 0.68rem;
+    font-weight: 700;
+    letter-spacing: 0.02em;
+  }
+  .chart-card-kicker::before {
+    content: "";
+    width: 6px;
+    height: 6px;
+    border-radius: 50%;
+    background: currentColor;
+  }
+  .chart-card-title { font-size: 0.92rem; font-weight: 800; color: #1e3a5f; margin: 0; }
+  .chart-card-subtitle { font-size: 0.75rem; color: #94a3b8; margin: 0.1rem 0 0; }
+  .chart-wrap { position: relative; }
+  .chart-wrap canvas { width: 100% !important; }
+  .chart-wrap--doughnut { max-width: 220px; margin: 0 auto; }
+  .chart-wrap--hero { min-height: 220px; }
+  .chart-wrap--compact { min-height: 210px; }
+  .chart-wrap--line { min-height: 220px; }
+  .chart-wrap--weekday { min-height: 190px; }
+  .chart-card-highlight-wrap {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 1rem;
+  }
+  .highlight-value {
+    font-size: 1.35rem;
+    font-weight: 800;
+    line-height: 1;
+    letter-spacing: -0.03em;
+  }
+  .highlight-note {
+    margin-top: 0.2rem;
+    color: rgba(255,255,255,0.78);
+    font-size: 0.74rem;
+  }
+  .highlight-icon {
+    width: 42px;
+    height: 42px;
+    border-radius: 12px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    background: rgba(255,255,255,0.12);
+    color: #fff;
+    border: 1px solid rgba(255,255,255,0.18);
+  }
+  .unit-days-table {
+    width: 100%;
+    border-collapse: collapse;
+    font-size: 0.8rem;
+  }
+  .unit-days-table th,
+  .unit-days-table td {
+    border-bottom: 1px solid #e8eef6;
+    padding: 0.45rem 0.3rem;
+    text-align: left;
+    vertical-align: top;
+  }
+  .unit-days-table th {
+    color: #1f3f66;
+    font-size: 0.76rem;
+    font-weight: 800;
+    text-transform: uppercase;
+    letter-spacing: 0.02em;
+  }
+  .unit-days-empty {
+    font-size: 0.8rem;
+    color: #64748b;
+  }
+</style>
+
+<div class="rel-shell">
+<div class="rel-header">
+  <div>
+    <h1>
+      <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"
+           stroke-linecap="round" stroke-linejoin="round" style="vertical-align:-4px;margin-right:6px">
+        <line x1="18" y1="20" x2="18" y2="10"/><line x1="12" y1="20" x2="12" y2="4"/><line x1="6" y1="20" x2="6" y2="14"/>
+      </svg>
+      Relatórios
+    </h1>
+    <p>Visão executiva dos chamados com distribuição, tendência e produtividade da operação.</p>
+  </div>
+    <div class="d-flex align-items-center gap-2 flex-wrap justify-content-end">
+      ${isDbConsoleAllowed
+        ? `<a href="/admin/db-console" class="btn btn-sm btn-dark fw-semibold">Abrir Console do Banco</a>`
+        : ""}
+      <div class="rel-header-badge">Pico semanal: ${topWeekdayName}</div>
+    </div>
+</div>
+
+<div class="kpi-grid">
+  <div class="kpi-card">
+    <div class="kpi-icon kpi-icon--blue">
+      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+        <path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/><polyline points="14 2 14 8 20 8"/>
+      </svg>
+    </div>
+    <div class="kpi-value">${totalTickets}</div>
+    <div class="kpi-label">Total de chamados</div>
+  </div>
+  <div class="kpi-card">
+    <div class="kpi-icon kpi-icon--yellow">
+      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+        <circle cx="12" cy="12" r="10"/><polyline points="12 6 12 12 16 14"/>
+      </svg>
+    </div>
+    <div class="kpi-value" style="color:#f59e0b">${countAbertos}</div>
+    <div class="kpi-label">Abertos</div>
+  </div>
+  <div class="kpi-card">
+    <div class="kpi-icon kpi-icon--teal">
+      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+        <polyline points="22 12 18 12 15 21 9 3 6 12 2 12"/>
+      </svg>
+    </div>
+    <div class="kpi-value" style="color:#0d9488">${countAndamento}</div>
+    <div class="kpi-label">Em andamento</div>
+  </div>
+  <div class="kpi-card">
+    <div class="kpi-icon kpi-icon--green">
+      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+        <polyline points="20 6 9 17 4 12"/>
+      </svg>
+    </div>
+    <div class="kpi-value" style="color:#10b981">${countResolvidos}</div>
+    <div class="kpi-label">Resolvidos / Fechados</div>
+  </div>
+</div>
+
+<div class="charts-grid-top">
+  <div class="chart-card">
+    <div class="chart-card-header">
+      <div>
+        <div class="chart-card-kicker">Panorama</div>
+        <p class="chart-card-title">Chamados por Status</p>
+        <p class="chart-card-subtitle">Distribuição atual</p>
+      </div>
+    </div>
+    <div class="chart-wrap chart-wrap--doughnut chart-wrap--hero">
+      <canvas id="chartStatus"></canvas>
+    </div>
+  </div>
+  <div class="chart-card">
+    <div class="chart-card-header">
+      <div>
+        <div class="chart-card-kicker">Triagem</div>
+        <p class="chart-card-title">Chamados por Prioridade</p>
+        <p class="chart-card-subtitle">Peso visual por criticidade</p>
+      </div>
+    </div>
+    <div class="chart-wrap chart-wrap--compact">
+      <canvas id="chartPriority"></canvas>
+    </div>
+  </div>
+  <div class="chart-card">
+    <div class="chart-card-header">
+      <div>
+        <div class="chart-card-kicker">Semana</div>
+        <p class="chart-card-title">Chamados por Dia da Semana</p>
+        <p class="chart-card-subtitle">Distribuição de abertura ao longo da semana</p>
+      </div>
+    </div>
+    <div class="chart-wrap chart-wrap--weekday">
+      <canvas id="chartWeekday"></canvas>
+    </div>
+  </div>
+</div>
+
+<div class="charts-grid-bottom">
+  <div class="chart-card">
+    <div class="chart-card-header">
+      <div>
+        <div class="chart-card-kicker">Tendência</div>
+        <p class="chart-card-title">Tendência Mensal</p>
+        <p class="chart-card-subtitle">Últimos 6 meses</p>
+      </div>
+    </div>
+    <div class="chart-wrap chart-wrap--line">
+      <canvas id="chartMonthly"></canvas>
+    </div>
+  </div>
+  <div class="charts-grid-stack">
+    <div class="chart-card">
+      <div class="chart-card-header">
+        <div>
+          <div class="chart-card-kicker">Volume</div>
+          <p class="chart-card-title">Top 5 Categorias</p>
+          <p class="chart-card-subtitle">Categorias com mais chamados</p>
+        </div>
+      </div>
+      <div class="chart-wrap chart-wrap--compact">
+        <canvas id="chartCategories"></canvas>
+      </div>
+    </div>
+    ${avgTimeHtml}
+  </div>
+  <div class="chart-card">
+    <div class="chart-card-header">
+      <div>
+        <div class="chart-card-kicker">Performance</div>
+        <p class="chart-card-title">Top 8 Agentes</p>
+        <p class="chart-card-subtitle">Agentes com mais chamados atribuídos</p>
+      </div>
+    </div>
+    <div class="chart-wrap chart-wrap--compact">
+      <canvas id="chartAgents"></canvas>
+    </div>
+  </div>
+</div>
+
+<div class="charts-grid-bottom">
+  <div class="chart-card">
+    <div class="chart-card-header">
+      <div>
+        <div class="chart-card-kicker">Setores</div>
+        <p class="chart-card-title">Chamados por Setor</p>
+        <p class="chart-card-subtitle">Volume de atendimento por setor</p>
+      </div>
+    </div>
+    <div class="chart-wrap chart-wrap--compact">
+      <canvas id="chartUnits"></canvas>
+    </div>
+  </div>
+
+  <div class="chart-card" style="grid-column: span 2;">
+    <div class="chart-card-header">
+      <div>
+        <div class="chart-card-kicker">Agenda</div>
+        <p class="chart-card-title">Dias de Atendimento por Setor</p>
+        <p class="chart-card-subtitle">Quais dias cada setor recebe chamados</p>
+      </div>
+    </div>
+    <div id="unitDaysSummary"></div>
+  </div>
+</div>
+</div>
+
+<template id="status-data-json">${safeStatusHtml}</template>
+<template id="priority-data-json">${safePriorityHtml}</template>
+<template id="weekday-data-json">${safeWeekdayHtml}</template>
+<template id="monthly-data-json">${safeMonthlyHtml}</template>
+<template id="categories-data-json">${safeCategoriesHtml}</template>
+<template id="agents-data-json">${safeAgentsHtml}</template>
+<template id="sectors-data-json">${safeSectorsHtml}</template>
+<template id="sector-weekdays-data-json">${safeSectorWeekdaysHtml}</template>
+
+<script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.0/dist/chart.umd.min.js"></script>
+<script>
+(function () {
+  var statusData = JSON.parse(document.getElementById('status-data-json').content.textContent || '[]');
+  var priorityData = JSON.parse(document.getElementById('priority-data-json').content.textContent || '[]');
+  var weekdayData = JSON.parse(document.getElementById('weekday-data-json').content.textContent || '[]');
+  var monthlyData = JSON.parse(document.getElementById('monthly-data-json').content.textContent || '[]');
+  var categoriesData = JSON.parse(document.getElementById('categories-data-json').content.textContent || '[]');
+  var agentsData = JSON.parse(document.getElementById('agents-data-json').content.textContent || '[]');
+  var sectorsData = JSON.parse(document.getElementById('sectors-data-json').content.textContent || '[]');
+  var sectorWeekdaysData = JSON.parse(document.getElementById('sector-weekdays-data-json').content.textContent || '[]');
+
+  var statusColors = {
+    aberto:'#f59e0b', em_andamento:'#0d9488',
+    pausa:'#f97316', aguardando_usuario:'#6366f1', resolvido:'#10b981', fechado:'#94a3b8'
+  };
+  var statusLabels = {
+    aberto:'Aberto', em_andamento:'Em andamento',
+    pausa:'Pausa', aguardando_usuario:'Aguardando usuário', resolvido:'Resolvido', fechado:'Fechado'
+  };
+  var priorityColors = { baixa:'#10b981', media:'#f59e0b', alta:'#ef4444', critica:'#7f1d1d' };
+  var priorityLabels = { baixa:'Baixa', media:'Média', alta:'Alta', critica:'Crítica' };
+  var weekdayLabels = ['Dom', 'Seg', 'Ter', 'Qua', 'Qui', 'Sex', 'Sáb'];
+  var blues = ['#2b6fbb','#1b5eaa','#123a6f','#3b82f6','#60a5fa','#93c5fd','#bfdbfe','#dbeafe'];
+
+  function createVerticalGradient(ctx, area, startColor, endColor) {
+    var gradient = ctx.createLinearGradient(0, area.bottom, 0, area.top);
+    gradient.addColorStop(0, startColor);
+    gradient.addColorStop(1, endColor);
+    return gradient;
+  }
+
+  function createHorizontalGradient(ctx, area, startColor, endColor) {
+    var gradient = ctx.createLinearGradient(area.left, 0, area.right, 0);
+    gradient.addColorStop(0, startColor);
+    gradient.addColorStop(1, endColor);
+    return gradient;
+  }
+
+  var centerTextPlugin = {
+    id: 'centerTextPlugin',
+    afterDatasetsDraw: function(chart, args, pluginOptions) {
+      if (chart.config.type !== 'doughnut') return;
+      var meta = chart.getDatasetMeta(0);
+      if (!meta || !meta.data || !meta.data.length) return;
+      var ctx = chart.ctx;
+      var x = meta.data[0].x;
+      var y = meta.data[0].y;
+      ctx.save();
+      ctx.textAlign = 'center';
+      ctx.textBaseline = 'middle';
+      ctx.fillStyle = '#123a6f';
+      ctx.font = '700 12px Segoe UI';
+      ctx.fillText(pluginOptions.label || 'Total', x, y - 10);
+      ctx.font = '800 28px Segoe UI';
+      ctx.fillText(String(pluginOptions.value || 0), x, y + 14);
+      ctx.restore();
+    }
+  };
+
+  var endLabelPlugin = {
+    id: 'endLabelPlugin',
+    afterDatasetsDraw: function(chart) {
+      if (chart.config.type !== 'bar' || chart.options.indexAxis !== 'y') return;
+      var ctx = chart.ctx;
+      var meta = chart.getDatasetMeta(0);
+      ctx.save();
+      ctx.fillStyle = '#123a6f';
+      ctx.font = '700 11px Segoe UI';
+      meta.data.forEach(function(bar, index) {
+        var value = chart.data.datasets[0].data[index];
+        ctx.textAlign = 'left';
+        ctx.textBaseline = 'middle';
+        ctx.fillText(String(value), bar.x + 8, bar.y);
+      });
+      ctx.restore();
+    }
+  };
+
+  Chart.register(centerTextPlugin, endLabelPlugin);
+
+  Chart.defaults.font.family = "'Inter','Segoe UI',sans-serif";
+  Chart.defaults.font.size   = 12;
+  Chart.defaults.color       = '#64748b';
+  Chart.defaults.animation.duration = 900;
+
+  if (statusData.length) {
+    new Chart(document.getElementById('chartStatus'), {
+      type: 'doughnut',
+      data: {
+        labels: statusData.map(function(d){ return statusLabels[d.status] || d.status; }),
+        datasets: [{ data: statusData.map(function(d){ return d.total; }),
+          backgroundColor: statusData.map(function(d){ return statusColors[d.status] || '#cbd5e1'; }),
+          borderWidth: 4, borderColor: '#f8fbff', hoverOffset: 8,
+          borderRadius: 10 }]
+      },
+      options: { responsive: true, maintainAspectRatio: false, cutout: '72%',
+        plugins: { legend: { position: 'bottom', labels: { padding: 14, boxWidth: 12 } },
+          centerTextPlugin: { label: 'Total', value: statusData.reduce(function(sum, item){ return sum + item.total; }, 0) },
+          tooltip: { callbacks: { label: function(ctx) {
+            var tot = ctx.dataset.data.reduce(function(a,b){ return a+b; }, 0);
+            return ' ' + ctx.label + ': ' + ctx.parsed + ' (' + Math.round(ctx.parsed/tot*100) + '%)';
+          }}}}
+      }
+    });
+  }
+
+  if (priorityData.length) {
+    new Chart(document.getElementById('chartPriority'), {
+      type: 'polarArea',
+      data: {
+        labels: priorityData.map(function(d){ return priorityLabels[d.priority] || d.priority; }),
+        datasets: [{ label: 'Chamados',
+          data: priorityData.map(function(d){ return d.total; }),
+          backgroundColor: priorityData.map(function(d){ return priorityColors[d.priority] || '#2b6fbb'; }),
+          borderColor: '#ffffff',
+          borderWidth: 3 }]
+      },
+      options: { responsive: true, maintainAspectRatio: false,
+        plugins: {
+          legend: { position: 'bottom', labels: { padding: 16, boxWidth: 12 } },
+          tooltip: { callbacks: { label: function(ctx) { return ' ' + ctx.label + ': ' + ctx.raw + ' chamados'; } } }
+        },
+        scales: {
+          r: {
+            beginAtZero: true,
+            ticks: { display: false },
+            grid: { color: 'rgba(148,163,184,0.20)' },
+            angleLines: { color: 'rgba(148,163,184,0.16)' },
+            pointLabels: { color: '#334155', font: { size: 11, weight: '700' } }
+          }
+        }
+      }
+    });
+  }
+
+  if (monthlyData.length) {
+    var monthlyCanvas = document.getElementById('chartMonthly');
+    var monthlyCtx = monthlyCanvas.getContext('2d');
+    new Chart(document.getElementById('chartMonthly'), {
+      type: 'line',
+      data: {
+        labels: monthlyData.map(function(d){ return d.mes; }),
+        datasets: [{ label: 'Chamados', data: monthlyData.map(function(d){ return d.total; }),
+          borderColor: '#2b6fbb',
+          backgroundColor: function(context) {
+            var chart = context.chart;
+            var area = chart.chartArea;
+            if (!area) return 'rgba(43,111,187,0.12)';
+            return createVerticalGradient(monthlyCtx, area, 'rgba(43,111,187,0.02)', 'rgba(43,111,187,0.28)');
+          },
+          borderWidth: 2.5, fill: true, tension: 0.4,
+          pointBackgroundColor: '#ffffff', pointBorderColor: '#2b6fbb', pointBorderWidth: 3,
+          pointRadius: 4, pointHoverRadius: 7, pointHoverBackgroundColor: '#2b6fbb' }]
+      },
+      options: { responsive: true, maintainAspectRatio: false,
+        interaction: { mode: 'index', intersect: false },
+        plugins: { legend: { display: false } },
+        scales: { y: { beginAtZero: true, ticks: { stepSize: 1 }, grid: { color: 'rgba(148,163,184,0.16)' }, border: { display: false } },
+                  x: { grid: { display: false }, border: { display: false } } }
+      }
+    });
+  }
+
+  if (weekdayData.length) {
+    var weekdayTotals = [0, 0, 0, 0, 0, 0, 0];
+    weekdayData.forEach(function(item) {
+      var index = Number(item.weekday);
+      if (!Number.isNaN(index) && index >= 0 && index < weekdayTotals.length) {
+        weekdayTotals[index] = Number(item.total) || 0;
+      }
+    });
+
+    new Chart(document.getElementById('chartWeekday'), {
+      type: 'bar',
+      data: {
+        labels: weekdayLabels,
+        datasets: [{
+          label: 'Chamados',
+          data: weekdayTotals,
+          backgroundColor: function(context) {
+            var chart = context.chart;
+            var area = chart.chartArea;
+            if (!area) return '#4f46e5';
+            return createVerticalGradient(chart.ctx, area, 'rgba(129,140,248,0.55)', 'rgba(79,70,229,0.95)');
+          },
+          borderRadius: 12,
+          borderSkipped: false,
+          maxBarThickness: 42
+        }]
+      },
+      options: {
+        responsive: true,
+        maintainAspectRatio: false,
+        plugins: {
+          legend: { display: false },
+          tooltip: {
+            callbacks: {
+              label: function(ctx) {
+                return ' ' + ctx.label + ': ' + ctx.raw + ' chamados';
+              }
+            }
+          }
+        },
+        scales: {
+          y: {
+            beginAtZero: true,
+            ticks: { stepSize: 1 },
+            grid: { color: 'rgba(148,163,184,0.16)' },
+            border: { display: false }
+          },
+          x: {
+            grid: { display: false },
+            border: { display: false }
+          }
+        }
+      }
+    });
+  }
+
+  if (categoriesData.length) {
+    var categoriesCanvas = document.getElementById('chartCategories');
+    var categoriesCtx = categoriesCanvas.getContext('2d');
+    new Chart(document.getElementById('chartCategories'), {
+      type: 'bar',
+      data: {
+        labels: categoriesData.map(function(d){ return d.name || 'Sem categoria'; }),
+        datasets: [{ label: 'Chamados', data: categoriesData.map(function(d){ return d.total; }),
+          backgroundColor: function(context) {
+            var chart = context.chart;
+            var area = chart.chartArea;
+            if (!area) return '#2b6fbb';
+            return createHorizontalGradient(categoriesCtx, area, '#8ec5ff', '#2b6fbb');
+          },
+          borderRadius: 999, borderSkipped: false, barThickness: 16 }]
+      },
+      options: { indexAxis: 'y', responsive: true, maintainAspectRatio: false,
+        plugins: { legend: { display: false } },
+        scales: { x: { beginAtZero: true, ticks: { stepSize: 1 }, grid: { color: 'rgba(148,163,184,0.16)' }, border: { display: false } },
+                  y: { grid: { display: false }, border: { display: false } } }
+      }
+    });
+  }
+
+  if (agentsData.length) {
+    var agentsCanvas = document.getElementById('chartAgents');
+    var agentsCtx = agentsCanvas.getContext('2d');
+    new Chart(document.getElementById('chartAgents'), {
+      type: 'bar',
+      data: {
+        labels: agentsData.map(function(d){ return d.name; }),
+        datasets: [{ label: 'Chamados', data: agentsData.map(function(d){ return d.total; }),
+          backgroundColor: function(context) {
+            var chart = context.chart;
+            var area = chart.chartArea;
+            if (!area) return '#0d9488';
+            return createHorizontalGradient(agentsCtx, area, '#82f3d0', '#0d9488');
+          },
+          borderRadius: 999, borderSkipped: false, barThickness: 16 }]
+      },
+      options: { indexAxis: 'y', responsive: true, maintainAspectRatio: false,
+        plugins: { legend: { display: false } },
+        scales: { x: { beginAtZero: true, ticks: { stepSize: 1 }, grid: { color: 'rgba(148,163,184,0.16)' }, border: { display: false } },
+                  y: { grid: { display: false }, border: { display: false } } }
+      }
+    });
+  }
+
+  if (sectorsData.length) {
+    var unitsCanvas = document.getElementById('chartUnits');
+    var unitsCtx = unitsCanvas.getContext('2d');
+    new Chart(unitsCanvas, {
+      type: 'bar',
+      data: {
+        labels: sectorsData.map(function(d){ return d.setor || 'Sem setor'; }),
+        datasets: [{
+          label: 'Chamados',
+          data: sectorsData.map(function(d){ return d.total; }),
+          backgroundColor: function(context) {
+            var chart = context.chart;
+            var area = chart.chartArea;
+            if (!area) return '#1b5eaa';
+            return createHorizontalGradient(unitsCtx, area, '#9ec5ff', '#1b5eaa');
+          },
+          borderRadius: 999,
+          borderSkipped: false,
+          barThickness: 16
+        }]
+      },
+      options: {
+        indexAxis: 'y',
+        responsive: true,
+        maintainAspectRatio: false,
+        plugins: { legend: { display: false } },
+        scales: {
+          x: { beginAtZero: true, ticks: { stepSize: 1 }, grid: { color: 'rgba(148,163,184,0.16)' }, border: { display: false } },
+          y: { grid: { display: false }, border: { display: false } }
+        }
+      }
+    });
+  }
+
+  (function renderSectorDaysSummary() {
+    var container = document.getElementById('unitDaysSummary');
+    if (!container) return;
+    if (!sectorWeekdaysData.length) {
+      container.innerHTML = '<p class="unit-days-empty">Sem dados de atendimento por setor no período.</p>';
+      return;
+    }
+
+    var weekdayNames = ['Dom', 'Seg', 'Ter', 'Qua', 'Qui', 'Sex', 'Sab'];
+    var map = {};
+
+    sectorWeekdaysData.forEach(function(item) {
+      var setor = item.setor || 'Sem setor';
+      var weekday = Number(item.weekday);
+      var total = Number(item.total) || 0;
+      if (!map[setor]) {
+        map[setor] = [];
+      }
+      if (!Number.isNaN(weekday) && weekday >= 0 && weekday <= 6) {
+        map[setor].push({
+          weekday: weekday,
+          label: weekdayNames[weekday],
+          total: total
+        });
+      }
+    });
+
+    var setorRows = Object.keys(map).sort().map(function(setor) {
+      var sortedDays = map[setor].sort(function(a, b) { return a.weekday - b.weekday; });
+      var diasLabel = sortedDays.map(function(d) { return d.label + ' (' + d.total + ')'; }).join(', ');
+      return '<tr><td>' + escapeHtml(setor) + '</td><td>' + escapeHtml(diasLabel || 'Sem dados') + '</td></tr>';
+    }).join('');
+
+    container.innerHTML =
+      '<table class="unit-days-table">' +
+      '<thead><tr><th>Setor</th><th>Dias com atendimento</th></tr></thead>' +
+      '<tbody>' + setorRows + '</tbody>' +
+      '</table>';
+  })();
+})();
+</script>
+
+` }) %>

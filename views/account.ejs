@@ -1,0 +1,93 @@
+<%
+  const escapeHtml = (value) =>
+    String(value ?? "")
+      .replace(/&/g, "&amp;")
+      .replace(/</g, "&lt;")
+      .replace(/>/g, "&gt;")
+      .replace(/\"/g, "&quot;")
+      .replace(/'/g, "&#39;");
+
+%>
+<%- include("layout", {
+    title: "Minha conta - Help Desk",
+    body: `
+<div class="row justify-content-center">
+  <div class="col-md-6">
+    <div class="card shadow-sm">
+      <div class="card-body">
+        <h1 class="h4 mb-3">Minha conta</h1>
+
+        ${
+          error
+            ? `<div class="alert alert-danger">${escapeHtml(error)}</div>`
+            : success
+            ? `<div class="alert alert-success">${escapeHtml(success)}</div>`
+            : ""
+        }
+
+        <form method="post" action="/account">
+          <input type="hidden" name="_csrf" value="${escapeHtml(csrfToken)}" />
+          <div class="mb-3">
+            <label class="form-label">Nome</label>
+            <input
+              type="text"
+              name="name"
+              class="form-control"
+              value="${escapeHtml(user.name)}"
+              required
+            />
+          </div>
+          <div class="mb-3">
+            <label class="form-label">E-mail</label>
+            <input
+              type="email"
+              name="email"
+              class="form-control"
+              value="${escapeHtml(user.email)}"
+              required
+            />
+          </div>
+
+          <hr />
+          <p class="small text-muted">
+            Para alterar a senha, preencha os campos abaixo.
+          </p>
+
+          <div class="mb-3">
+            <label class="form-label">Senha atual</label>
+            <input
+              type="password"
+              name="current_password"
+              class="form-control"
+            />
+          </div>
+          <div class="mb-3">
+            <label class="form-label">Nova senha</label>
+            <input
+              type="password"
+              name="new_password"
+              class="form-control"
+            />
+          </div>
+          <div class="mb-3">
+            <label class="form-label">Confirmar nova senha</label>
+            <input
+              type="password"
+              name="confirm_password"
+              class="form-control"
+            />
+          </div>
+
+          <div class="d-flex justify-content-end">
+            <button type="submit" class="btn btn-primary">
+              Salvar alterações
+            </button>
+          </div>
+        </form>
+      </div>
+    </div>
+  </div>
+</div>
+    `,
+  }) %>
+

@@ -1,0 +1,115 @@
+<%
+  const escapeHtml = (value) =>
+    String(value ?? "")
+      .replace(/&/g, "&amp;")
+      .replace(/</g, "&lt;")
+      .replace(/>/g, "&gt;")
+      .replace(/\"/g, "&quot;")
+      .replace(/'/g, "&#39;");
+
+%>
+<%- include("layout", {
+    title: "Abrir chamado - Help Desk",
+    body: `
+<script>
+  (function() {
+    function labelFromPriority(priority) {
+      if (priority === "baixa") return "Baixa";
+      if (priority === "alta") return "Alta";
+      if (priority === "critica") return "Crítica";
+      return "Média";
+    }
+
+    document.addEventListener("DOMContentLoaded", function() {
+      var categorySelect = document.getElementById("ticket-category-id");
+      var priorityInput = document.getElementById("ticket-priority-hidden");
+      var priorityLabel = document.getElementById("ticket-priority-label");
+      if (!categorySelect || !priorityInput || !priorityLabel) return;
+
+      var syncPriority = function() {
+        var selected = categorySelect.options[categorySelect.selectedIndex];
+        var defaultPriority = selected ? (selected.getAttribute("data-default-priority") || "media") : "media";
+        priorityInput.value = defaultPriority;
+        priorityLabel.textContent = labelFromPriority(defaultPriority);
+      };
+
+      categorySelect.addEventListener("change", syncPriority);
+      syncPriority();
+    });
+  })();
+<\/script>
+
+<div class="row justify-content-center">
+  <div class="col-md-8">
+    <div class="card shadow-sm">
+      <div class="card-body">
+        <h1 class="h4 mb-3">Abrir chamado</h1>
+        <form method="post" action="/tickets">
+          <input type="hidden" name="_csrf" value="${escapeHtml(csrfToken)}" />
+          <div class="mb-3">
+            <label class="form-label">Título</label>
+            <input type="text" name="title" class="form-control" required />
+          </div>
+          <div class="mb-3">
+            <label class="form-label">Descrição</label>
+            <textarea
+              name="description"
+              class="form-control"
+              rows="4"
+              required
+            ></textarea>
+          </div>
+          <div class="row">
+            <div class="col-md-4 mb-3">
+              <label class="form-label">Prioridade (definida pela categoria)</label>
+              <input type="hidden" id="ticket-priority-hidden" name="priority" value="media" />
+              <div id="ticket-priority-label" class="form-control bg-light">Média</div>
+            </div>
+            <div class="col-md-4 mb-3">
+              <label class="form-label">Setor</label>
+              <select name="department_id" class="form-select">
+                <option value="">Selecione...</option>
+                ${departments
+                  .map(
+                    (d) => {
+                      const safeId = Number.isInteger(Number(d.id)) ? Number(d.id) : 0;
+                      return `<option value="${safeId}">${escapeHtml(d.name)}</option>`;
+                    }
+                  )
+                  .join("")}
+              </select>
+            </div>
+            <div class="col-md-4 mb-3">
+              <label class="form-label">Categoria</label>
+              <select id="ticket-category-id" name="category_id" class="form-select">
+                <option value="">Selecione...</option>
+                ${categories
+                  .map(
+                    (c) => {
+                      const safeId = Number.isInteger(Number(c.id)) ? Number(c.id) : 0;
+                      const safePriority = ["baixa", "media", "alta", "critica"].includes(c.default_priority)
+                        ? c.default_priority
+                        : "media";
+                      return `<option value="${safeId}" data-default-priority="${safePriority}">${escapeHtml(c.name)}</option>`;
+                    }
+                  )
+                  .join("")}
+              </select>
+            </div>
+          </div>
+          <div class="d-flex justify-content-end">
+            <a href="/tickets" class="btn btn-outline-secondary me-2">
+              Cancelar
+            </a>
+            <button type="submit" class="btn btn-primary">
+              Abrir chamado
+            </button>
+          </div>
+        </form>
+      </div>
+    </div>
+  </div>
+</div>
+    `,
+  }) %>
+

@@ -1,0 +1,141 @@
+<%
+  const escapeHtml = (value) =>
+    String(value ?? "")
+      .replace(/&/g, "&amp;")
+      .replace(/</g, "&lt;")
+      .replace(/>/g, "&gt;")
+      .replace(/\"/g, "&quot;")
+      .replace(/'/g, "&#39;");
+
+  const allowedStatuses = ["aberto", "em_andamento", "pausa", "aguardando_usuario", "resolvido", "fechado"];
+  const allowedPriorities = ["baixa", "media", "alta", "critica"];
+
+%>
+<%- include("layout", {
+    title: "Chamados - Help Desk",
+    body: `
+<script>
+  (function() {
+    let remaining = 10;
+    const badge = document.getElementById('refresh-countdown');
+    const interval = setInterval(function() {
+      remaining--;
+      if (badge) badge.textContent = remaining + 's';
+      if (remaining <= 0) {
+        clearInterval(interval);
+        location.reload();
+      }
+    }, 1000);
+  })();
+<\/script>
+
+${user && user.role === "user" ? `
+<div class="sla-alert-banner" role="alert" aria-live="polite">
+  <span class="sla-alert-banner-icon">
+    <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><path d="M10.29 3.86 1.82 18a2 2 0 0 0 1.71 3h16.94a2 2 0 0 0 1.71-3L13.71 3.86a2 2 0 0 0-3.42 0Z"/><line x1="12" y1="9" x2="12" y2="13"/><line x1="12" y1="17" x2="12.01" y2="17"/></svg>
+  </span>
+  <span>Nossa SLA é de 48hs úteis!</span>
+</div>
+` : ""}
+
+<div class="page-header mb-4">
+  <div>
+    <h1 class="page-header-title">Chamados</h1>
+    <p class="page-header-sub">Visualize e gerencie todos os chamados da plataforma.</p>
+  </div>
+  <div class="d-flex align-items-center gap-2 flex-wrap justify-content-end">
+    <span class="admin-refresh-badge">
+      <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><polyline points="23 4 23 10 17 10"/><path d="M20.49 15a9 9 0 1 1-2.12-9.36L23 10"/></svg>
+      Atualiza em <strong id="refresh-countdown">10s</strong>
+    </span>
+    <a href="/tickets/new" class="btn btn-light fw-semibold px-4">+ Abrir chamado</a>
+  </div>
+</div>
+
+<div class="row g-3 mb-4">
+  <div class="col-6 col-md-3">
+    <div class="stat-card">
+      <div class="stat-card-value">${tickets.length}</div>
+      <div class="stat-card-label">Total</div>
+    </div>
+  </div>
+  <div class="col-6 col-md-3">
+    <div class="stat-card stat-card--open">
+      <div class="stat-card-value">${tickets.filter(t => t.status === 'aberto').length}</div>
+      <div class="stat-card-label">Abertos</div>
+    </div>
+  </div>
+  <div class="col-6 col-md-3">
+    <div class="stat-card stat-card--progress">
+      <div class="stat-card-value">${tickets.filter(t => t.status === 'em_andamento' || t.status === 'pausa' || t.status === 'aguardando_usuario').length}</div>
+      <div class="stat-card-label">Em andamento</div>
+    </div>
+  </div>
+  <div class="col-6 col-md-3">
+    <div class="stat-card stat-card--done">
+      <div class="stat-card-value">${tickets.filter(t => t.status === 'resolvido' || t.status === 'fechado').length}</div>
+      <div class="stat-card-label">Resolvidos</div>
+    </div>
+  </div>
+</div>
+
+<div class="card shadow-sm tickets-table-card">
+  <div class="card-body p-0">
+    <table class="table tickets-table mb-0 align-middle">
+      <thead>
+        <tr>
+          <th>#</th>
+          <th>Título</th>
+          <th>Status</th>
+          <th>Prioridade</th>
+          <th>Solicitante</th>
+          <th>Responsável</th>
+          <th>Abertura</th>
+          <th></th>
+        </tr>
+      </thead>
+      <tbody>
+        ${
+          tickets.length === 0
+            ? `
+        <tr>
+          <td colspan="8" class="tickets-empty-state">
+            <div class="tickets-empty-icon">
+              <svg width="48" height="48" viewBox="0 0 24 24" fill="none" stroke="#b0bcc9" stroke-width="1.4" stroke-linecap="round" stroke-linejoin="round"><path d="M9 5H7a2 2 0 0 0-2 2v12a2 2 0 0 0 2 2h10a2 2 0 0 0 2-2V7a2 2 0 0 0-2-2h-2"/><rect x="9" y="3" width="6" height="4" rx="1"/><line x1="9" y1="12" x2="15" y2="12"/><line x1="9" y1="16" x2="12" y2="16"/></svg>
+            </div>
+            <p class="mb-1 fw-semibold text-secondary">Nenhum chamado encontrado</p>
+            <p class="small text-muted mb-3">Quando chamados forem criados, eles aparecerão aqui.</p>
+            <a href="/tickets/new" class="btn btn-primary btn-sm">Abrir primeiro chamado</a>
+          </td>
+        </tr>
+        `
+            : tickets
+                .map(
+                  (t) => {
+                    const safeStatus = allowedStatuses.includes(t.status) ? t.status : "aberto";
+                    const safePriority = allowedPriorities.includes(t.priority) ? t.priority : "media";
+                    const safeId = Number.isInteger(Number(t.id)) ? Number(t.id) : 0;
+
+                    return `
+        <tr class="tickets-table-row tickets-table-row--link" data-ticket-href="/tickets/${safeId}" tabindex="0" role="link" aria-label="Abrir detalhes do chamado ${safeId}">
+          <td class="text-muted fw-semibold">#${safeId}</td>
+          <td class="tickets-title">${escapeHtml(t.title)}</td>
+          <td><span class="badge badge-status-${safeStatus}">${escapeHtml(safeStatus.replace(/_/g, " "))}</span></td>
+          <td><span class="badge badge-priority-${safePriority}">${escapeHtml(safePriority)}</span></td>
+          <td>${escapeHtml(t.requester_name)}</td>
+          <td>${escapeHtml(t.assignee_name || "-")}</td>
+          <td class="text-muted small">${escapeHtml(t.created_at)}</td>
+          <td><a href="/tickets/${safeId}" class="btn btn-sm btn-outline-primary tickets-btn-detail">Detalhes</a></td>
+        </tr>
+        `;
+                  }
+                )
+                .join("")
+        }
+      </tbody>
+    </table>
+  </div>
+</div>
+    `,
+  }) %>
+

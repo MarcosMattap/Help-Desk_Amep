@@ -1,0 +1,646 @@
+
+<!DOCTYPE html>
+<html lang="pt-BR">
+  <head>
+    <meta charset="UTF-8" />
+    <title>Relatórios — Help Desk</title>
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <link rel="preconnect" href="https://fonts.googleapis.com" />
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+    <link
+      href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600&display=swap"
+      rel="stylesheet"
+    />
+    <link
+      href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/css/bootstrap.min.css"
+      rel="stylesheet"
+      integrity="sha384-QWTKZyjpPEjISv5WaRU9OFeRpok6YctnYmDr5pNlyT2bRjXh0JMhjY6hW+ALEwIH"
+      crossorigin="anonymous"
+    />
+    <link rel="stylesheet" href="/css/styles.css" />
+  </head>
+  <body class="bg-light">
+    
+      <header class="app-header">
+        <div class="app-header-top">
+          <div class="container-fluid d-flex align-items-center justify-content-between gap-3 flex-wrap">
+
+            <!-- Marca -->
+            <a class="app-header-brand" href="/tickets">
+              <img src="/img/logo-grupo-amep.png" alt="Grupo Amep" class="app-header-logo" />
+              <div class="app-header-brand-text">
+                <span class="app-header-brand-name">Help Desk</span>
+                <span class="app-header-brand-tagline">Central de Atendimento</span>
+              </div>
+            </a>
+
+            <!-- Toggler mobile -->
+            <button class="navbar-toggler app-header-toggler" type="button"
+              data-bs-toggle="collapse" data-bs-target="#appNav" aria-expanded="false">
+              <span class="navbar-toggler-icon"></span>
+            </button>
+
+            <!-- Navegação -->
+            <div class="collapse navbar-collapse app-nav-collapse" id="appNav">
+              <nav class="app-nav">
+                <a class="app-nav-link" href="/tickets">
+                  <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M9 5H7a2 2 0 0 0-2 2v12a2 2 0 0 0 2 2h10a2 2 0 0 0 2-2V7a2 2 0 0 0-2-2h-2"/><rect x="9" y="3" width="6" height="4" rx="1"/><line x1="9" y1="12" x2="15" y2="12"/><line x1="9" y1="16" x2="12" y2="16"/></svg>
+                  Chamados
+                </a>
+                <a class="app-nav-link" href="/tickets/new">
+                  <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="10"/><line x1="12" y1="8" x2="12" y2="16"/><line x1="8" y1="12" x2="16" y2="12"/></svg>
+                  Abrir chamado
+                </a>
+                
+                <a class="app-nav-link" href="/admin">
+                  <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 2a10 10 0 1 0 0 20A10 10 0 0 0 12 2z"/><path d="M12 8v4l3 3"/></svg>
+                  Administração
+                </a>
+                <a class="app-nav-link" href="/admin/relatorios">
+                  <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><line x1="18" y1="20" x2="18" y2="10"/><line x1="12" y1="20" x2="12" y2="4"/><line x1="6" y1="20" x2="6" y2="14"/></svg>
+                  Relatórios
+                </a>
+                
+              </nav>
+
+              <!-- Usuário -->
+              <div class="app-header-user">
+                <div class="app-header-avatar">A</div>
+                <div class="app-header-user-info">
+                  <span class="app-header-user-name">Admin</span>
+                  <span class="app-header-user-role">admin</span>
+                </div>
+                <div class="app-header-user-actions">
+                  <a href="/account" class="app-header-user-link" title="Minha conta">
+                    <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2"/><circle cx="12" cy="7" r="4"/></svg>
+                  </a>
+                  <a href="/logout" class="app-header-user-link" title="Sair">
+                    <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M9 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h4"/><polyline points="16 17 21 12 16 7"/><line x1="21" y1="12" x2="9" y2="12"/></svg>
+                    Sair
+                  </a>
+                </div>
+              </div>
+            </div>
+
+          </div>
+        </div>
+      </header>
+    
+
+    <main class="container app-main">
+      
+
+<style>
+  .rel-shell {
+    position: relative;
+  }
+  .rel-shell::before {
+    content: "";
+    position: absolute;
+    inset: -1rem -1rem auto;
+    height: 220px;
+    background:
+      radial-gradient(circle at 12% 18%, rgba(43,111,187,0.20), transparent 32%),
+      radial-gradient(circle at 86% 12%, rgba(13,148,136,0.16), transparent 28%),
+      linear-gradient(180deg, rgba(255,255,255,0.95), rgba(255,255,255,0));
+    pointer-events: none;
+    z-index: 0;
+  }
+  .rel-shell > * {
+    position: relative;
+    z-index: 1;
+  }
+  .rel-header {
+    margin-bottom: 1.75rem;
+    display: flex;
+    align-items: flex-start;
+    justify-content: space-between;
+    gap: 1rem;
+    padding: 1.35rem 1.45rem;
+    border-radius: 20px;
+    background: linear-gradient(135deg, rgba(255,255,255,0.96), rgba(236,244,252,0.92));
+    border: 1px solid rgba(201,215,231,0.78);
+    box-shadow: 0 16px 40px rgba(18,58,111,0.10);
+    backdrop-filter: blur(10px);
+  }
+  .rel-header h1 {
+    font-size: 1.7rem; font-weight: 800;
+    background: linear-gradient(135deg, #2b6fbb, #123a6f);
+    -webkit-background-clip: text; -webkit-text-fill-color: transparent; background-clip: text;
+    margin: 0 0 0.2rem;
+  }
+  .rel-header p { color: #64748b; font-size: 0.93rem; margin: 0; max-width: 560px; }
+  .rel-header-badge {
+    padding: 0.58rem 0.9rem;
+    border-radius: 999px;
+    background: rgba(18,58,111,0.08);
+    color: #123a6f;
+    font-size: 0.8rem;
+    font-weight: 700;
+    white-space: nowrap;
+  }
+  .kpi-grid { display: grid; grid-template-columns: repeat(4, 1fr); gap: 1rem; margin-bottom: 1.75rem; }
+  @media (max-width: 900px) { .kpi-grid { grid-template-columns: repeat(2, 1fr); } }
+  @media (max-width: 680px) {
+    .rel-header { flex-direction: column; }
+  }
+  @media (max-width: 500px) { .kpi-grid { grid-template-columns: 1fr; } }
+  .kpi-card {
+    position: relative;
+    overflow: hidden;
+    background: linear-gradient(180deg, #ffffff, #f6fafe); border-radius: 18px; padding: 1.25rem 1.4rem;
+    box-shadow: 0 12px 28px rgba(19,58,111,0.10); border: 1px solid #e8eef6;
+    display: flex; flex-direction: column; gap: 0.3rem;
+  }
+  .kpi-card::after {
+    content: "";
+    position: absolute;
+    width: 120px;
+    height: 120px;
+    border-radius: 50%;
+    right: -35px;
+    top: -45px;
+    background: radial-gradient(circle, rgba(43,111,187,0.16), rgba(43,111,187,0));
+  }
+  .kpi-icon {
+    width: 42px; height: 42px; border-radius: 12px;
+    display: flex; align-items: center; justify-content: center; margin-bottom: 0.5rem;
+    box-shadow: inset 0 1px 0 rgba(255,255,255,0.4);
+  }
+  .kpi-icon svg { width: 20px; height: 20px; }
+  .kpi-icon--blue   { background: #e8f0fb; color: #2b6fbb; }
+  .kpi-icon--yellow { background: #fff8e1; color: #f59e0b; }
+  .kpi-icon--green  { background: #e8faf3; color: #10b981; }
+  .kpi-icon--teal   { background: #e0f7f4; color: #0d9488; }
+  .kpi-value { font-size: 2rem; font-weight: 800; color: #123a6f; line-height: 1; letter-spacing: -0.03em; }
+  .kpi-label { font-size: 0.82rem; color: #64748b; font-weight: 600; }
+  .charts-grid-2 { display: grid; grid-template-columns: 1fr 1fr; gap: 1.25rem; margin-bottom: 1.25rem; }
+  .charts-grid-1 { display: grid; grid-template-columns: 1fr; gap: 1.25rem; margin-bottom: 1.25rem; }
+  @media (max-width: 860px) { .charts-grid-2 { grid-template-columns: 1fr; } }
+  .chart-card {
+    position: relative;
+    overflow: hidden;
+    background: linear-gradient(180deg, rgba(255,255,255,0.96), rgba(246,250,254,0.94));
+    border-radius: 20px; padding: 1.4rem 1.5rem;
+    box-shadow: 0 16px 36px rgba(19,58,111,0.10); border: 1px solid #e8eef6;
+    backdrop-filter: blur(10px);
+  }
+  .chart-card::before {
+    content: "";
+    position: absolute;
+    inset: 0 auto auto 0;
+    width: 100%;
+    height: 5px;
+    background: linear-gradient(90deg, #2b6fbb, #0d9488);
+    opacity: 0.95;
+  }
+  .chart-card--highlight {
+    background: linear-gradient(135deg, #123a6f, #1b5eaa 65%, #2b6fbb);
+    border: 0;
+    box-shadow: 0 20px 42px rgba(18,58,111,0.22);
+    color: #fff;
+  }
+  .chart-card-header {
+    margin-bottom: 1rem;
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 0.75rem;
+  }
+  .chart-card-kicker {
+    display: inline-flex;
+    align-items: center;
+    gap: 0.35rem;
+    padding: 0.28rem 0.55rem;
+    border-radius: 999px;
+    background: rgba(43,111,187,0.08);
+    color: #2b6fbb;
+    font-size: 0.72rem;
+    font-weight: 700;
+    letter-spacing: 0.02em;
+  }
+  .chart-card-kicker::before {
+    content: "";
+    width: 6px;
+    height: 6px;
+    border-radius: 50%;
+    background: currentColor;
+  }
+  .chart-card-title { font-size: 1rem; font-weight: 800; color: #1e3a5f; margin: 0; }
+  .chart-card-subtitle { font-size: 0.79rem; color: #94a3b8; margin: 0.15rem 0 0; }
+  .chart-wrap { position: relative; }
+  .chart-wrap canvas { width: 100% !important; }
+  .chart-wrap--doughnut { max-width: 320px; margin: 0 auto; }
+  .chart-wrap--hero { min-height: 315px; }
+  .chart-wrap--compact { min-height: 280px; }
+  .chart-wrap--line { min-height: 340px; }
+  .chart-card-highlight-wrap {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 1rem;
+  }
+  .highlight-value {
+    font-size: 2rem;
+    font-weight: 800;
+    line-height: 1;
+    letter-spacing: -0.03em;
+  }
+  .highlight-note {
+    margin-top: 0.35rem;
+    color: rgba(255,255,255,0.78);
+    font-size: 0.82rem;
+  }
+  .highlight-icon {
+    width: 52px;
+    height: 52px;
+    border-radius: 15px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    background: rgba(255,255,255,0.12);
+    color: #fff;
+    border: 1px solid rgba(255,255,255,0.18);
+  }
+</style>
+
+<div class="rel-shell">
+<div class="rel-header">
+  <div>
+    <h1>
+      <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"
+           stroke-linecap="round" stroke-linejoin="round" style="vertical-align:-4px;margin-right:6px">
+        <line x1="18" y1="20" x2="18" y2="10"/><line x1="12" y1="20" x2="12" y2="4"/><line x1="6" y1="20" x2="6" y2="14"/>
+      </svg>
+      Relatórios
+    </h1>
+    <p>Visão executiva dos chamados com distribuição, tendência e produtividade da operação.</p>
+  </div>
+  <div class="rel-header-badge">Atualização analítica em tempo real</div>
+</div>
+
+<div class="kpi-grid">
+  <div class="kpi-card">
+    <div class="kpi-icon kpi-icon--blue">
+      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+        <path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/><polyline points="14 2 14 8 20 8"/>
+      </svg>
+    </div>
+    <div class="kpi-value">6</div>
+    <div class="kpi-label">Total de chamados</div>
+  </div>
+  <div class="kpi-card">
+    <div class="kpi-icon kpi-icon--yellow">
+      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+        <circle cx="12" cy="12" r="10"/><polyline points="12 6 12 12 16 14"/>
+      </svg>
+    </div>
+    <div class="kpi-value" style="color:#f59e0b">3</div>
+    <div class="kpi-label">Abertos</div>
+  </div>
+  <div class="kpi-card">
+    <div class="kpi-icon kpi-icon--teal">
+      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+        <polyline points="22 12 18 12 15 21 9 3 6 12 2 12"/>
+      </svg>
+    </div>
+    <div class="kpi-value" style="color:#0d9488">2</div>
+    <div class="kpi-label">Em andamento</div>
+  </div>
+  <div class="kpi-card">
+    <div class="kpi-icon kpi-icon--green">
+      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+        <polyline points="20 6 9 17 4 12"/>
+      </svg>
+    </div>
+    <div class="kpi-value" style="color:#10b981">1</div>
+    <div class="kpi-label">Resolvidos / Fechados</div>
+  </div>
+</div>
+
+<div class="charts-grid-2">
+  <div class="chart-card">
+    <div class="chart-card-header">
+      <div>
+        <div class="chart-card-kicker">Panorama</div>
+        <p class="chart-card-title">Chamados por Status</p>
+        <p class="chart-card-subtitle">Distribuição atual</p>
+      </div>
+    </div>
+    <div class="chart-wrap chart-wrap--doughnut chart-wrap--hero">
+      <canvas id="chartStatus"></canvas>
+    </div>
+  </div>
+  <div class="chart-card">
+    <div class="chart-card-header">
+      <div>
+        <div class="chart-card-kicker">Triagem</div>
+        <p class="chart-card-title">Chamados por Prioridade</p>
+        <p class="chart-card-subtitle">Peso visual por criticidade</p>
+      </div>
+    </div>
+    <div class="chart-wrap chart-wrap--compact">
+      <canvas id="chartPriority"></canvas>
+    </div>
+  </div>
+</div>
+
+<div class="charts-grid-1">
+  <div class="chart-card">
+    <div class="chart-card-header">
+      <div>
+        <div class="chart-card-kicker">Tendência</div>
+        <p class="chart-card-title">Tendência Mensal</p>
+        <p class="chart-card-subtitle">Chamados abertos nos últimos 6 meses</p>
+      </div>
+    </div>
+    <div class="chart-wrap chart-wrap--line">
+      <canvas id="chartMonthly"></canvas>
+    </div>
+  </div>
+</div>
+
+<div class="charts-grid-2">
+  <div class="chart-card">
+    <div class="chart-card-header">
+      <div>
+        <div class="chart-card-kicker">Volume</div>
+        <p class="chart-card-title">Top 5 Categorias</p>
+        <p class="chart-card-subtitle">Categorias com mais chamados</p>
+      </div>
+    </div>
+    <div class="chart-wrap chart-wrap--compact">
+      <canvas id="chartCategories"></canvas>
+    </div>
+  </div>
+  <div class="chart-card">
+    <div class="chart-card-header">
+      <div>
+        <div class="chart-card-kicker">Performance</div>
+        <p class="chart-card-title">Top 8 Agentes</p>
+        <p class="chart-card-subtitle">Agentes com mais chamados atribuídos</p>
+      </div>
+    </div>
+    <div class="chart-wrap chart-wrap--compact">
+      <canvas id="chartAgents"></canvas>
+    </div>
+  </div>
+</div>
+
+<div class="chart-card chart-card--highlight"><div class="chart-card-highlight-wrap"><div><p class="chart-card-subtitle" style="margin:0 0 0.35rem">Tempo m&eacute;dio de resolu&ccedil;&atilde;o</p><div class="highlight-value">6.2h</div><div class="highlight-note">para chamados resolvidos ou fechados</div></div><div class="highlight-icon"><svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="10"/><polyline points="12 6 12 12 16 14"/></svg></div></div></div>
+</div>
+
+<script type="application/json" id="status-data-json">[{&quot;status&quot;:&quot;aberto&quot;,&quot;total&quot;:3},{&quot;status&quot;:&quot;em_andamento&quot;,&quot;total&quot;:2},{&quot;status&quot;:&quot;resolvido&quot;,&quot;total&quot;:1}]</script>
+<script type="application/json" id="priority-data-json">[{&quot;priority&quot;:&quot;baixa&quot;,&quot;total&quot;:1},{&quot;priority&quot;:&quot;media&quot;,&quot;total&quot;:2},{&quot;priority&quot;:&quot;alta&quot;,&quot;total&quot;:2}]</script>
+<script type="application/json" id="monthly-data-json">[{&quot;mes&quot;:&quot;2025-10&quot;,&quot;total&quot;:3},{&quot;mes&quot;:&quot;2025-11&quot;,&quot;total&quot;:5},{&quot;mes&quot;:&quot;2025-12&quot;,&quot;total&quot;:4}]</script>
+<script type="application/json" id="categories-data-json">[{&quot;name&quot;:&quot;Hardware&quot;,&quot;total&quot;:4},{&quot;name&quot;:&quot;Software&quot;,&quot;total&quot;:3}]</script>
+<script type="application/json" id="agents-data-json">[{&quot;name&quot;:&quot;Ana&quot;,&quot;total&quot;:3},{&quot;name&quot;:&quot;Carlos&quot;,&quot;total&quot;:2}]</script>
+
+<script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.0/dist/chart.umd.min.js"></script>
+<script>
+(function () {
+  var statusData     = JSON.parse(document.getElementById('status-data-json').textContent || '[]');
+  var priorityData   = JSON.parse(document.getElementById('priority-data-json').textContent || '[]');
+  var monthlyData    = JSON.parse(document.getElementById('monthly-data-json').textContent || '[]');
+  var categoriesData = JSON.parse(document.getElementById('categories-data-json').textContent || '[]');
+  var agentsData     = JSON.parse(document.getElementById('agents-data-json').textContent || '[]');
+
+  var statusColors = {
+    aberto:'#f59e0b', em_andamento:'#0d9488',
+    aguardando_usuario:'#6366f1', resolvido:'#10b981', fechado:'#94a3b8'
+  };
+  var statusLabels = {
+    aberto:'Aberto', em_andamento:'Em andamento',
+    aguardando_usuario:'Aguardando usuário', resolvido:'Resolvido', fechado:'Fechado'
+  };
+  var priorityColors = { baixa:'#10b981', media:'#f59e0b', alta:'#ef4444', critica:'#7f1d1d' };
+  var priorityLabels = { baixa:'Baixa', media:'Média', alta:'Alta', critica:'Crítica' };
+  var blues = ['#2b6fbb','#1b5eaa','#123a6f','#3b82f6','#60a5fa','#93c5fd','#bfdbfe','#dbeafe'];
+
+  function createVerticalGradient(ctx, area, startColor, endColor) {
+    var gradient = ctx.createLinearGradient(0, area.bottom, 0, area.top);
+    gradient.addColorStop(0, startColor);
+    gradient.addColorStop(1, endColor);
+    return gradient;
+  }
+
+  function createHorizontalGradient(ctx, area, startColor, endColor) {
+    var gradient = ctx.createLinearGradient(area.left, 0, area.right, 0);
+    gradient.addColorStop(0, startColor);
+    gradient.addColorStop(1, endColor);
+    return gradient;
+  }
+
+  var centerTextPlugin = {
+    id: 'centerTextPlugin',
+    afterDatasetsDraw: function(chart, args, pluginOptions) {
+      if (chart.config.type !== 'doughnut') return;
+      var meta = chart.getDatasetMeta(0);
+      if (!meta || !meta.data || !meta.data.length) return;
+      var ctx = chart.ctx;
+      var x = meta.data[0].x;
+      var y = meta.data[0].y;
+      ctx.save();
+      ctx.textAlign = 'center';
+      ctx.textBaseline = 'middle';
+      ctx.fillStyle = '#123a6f';
+      ctx.font = '700 12px Segoe UI';
+      ctx.fillText(pluginOptions.label || 'Total', x, y - 10);
+      ctx.font = '800 28px Segoe UI';
+      ctx.fillText(String(pluginOptions.value || 0), x, y + 14);
+      ctx.restore();
+    }
+  };
+
+  var endLabelPlugin = {
+    id: 'endLabelPlugin',
+    afterDatasetsDraw: function(chart) {
+      if (chart.config.type !== 'bar' || chart.options.indexAxis !== 'y') return;
+      var ctx = chart.ctx;
+      var meta = chart.getDatasetMeta(0);
+      ctx.save();
+      ctx.fillStyle = '#123a6f';
+      ctx.font = '700 11px Segoe UI';
+      meta.data.forEach(function(bar, index) {
+        var value = chart.data.datasets[0].data[index];
+        ctx.textAlign = 'left';
+        ctx.textBaseline = 'middle';
+        ctx.fillText(String(value), bar.x + 8, bar.y);
+      });
+      ctx.restore();
+    }
+  };
+
+  Chart.register(centerTextPlugin, endLabelPlugin);
+
+  Chart.defaults.font.family = "'Inter','Segoe UI',sans-serif";
+  Chart.defaults.font.size   = 12;
+  Chart.defaults.color       = '#64748b';
+  Chart.defaults.animation.duration = 900;
+
+  if (statusData.length) {
+    new Chart(document.getElementById('chartStatus'), {
+      type: 'doughnut',
+      data: {
+        labels: statusData.map(function(d){ return statusLabels[d.status] || d.status; }),
+        datasets: [{ data: statusData.map(function(d){ return d.total; }),
+          backgroundColor: statusData.map(function(d){ return statusColors[d.status] || '#cbd5e1'; }),
+          borderWidth: 4, borderColor: '#f8fbff', hoverOffset: 8,
+          borderRadius: 10 }]
+      },
+      options: { responsive: true, maintainAspectRatio: false, cutout: '72%',
+        plugins: { legend: { position: 'bottom', labels: { padding: 14, boxWidth: 12 } },
+          centerTextPlugin: { label: 'Total', value: statusData.reduce(function(sum, item){ return sum + item.total; }, 0) },
+          tooltip: { callbacks: { label: function(ctx) {
+            var tot = ctx.dataset.data.reduce(function(a,b){ return a+b; }, 0);
+            return ' ' + ctx.label + ': ' + ctx.parsed + ' (' + Math.round(ctx.parsed/tot*100) + '%)';
+          }}}}
+      }
+    });
+  }
+
+  if (priorityData.length) {
+    new Chart(document.getElementById('chartPriority'), {
+      type: 'polarArea',
+      data: {
+        labels: priorityData.map(function(d){ return priorityLabels[d.priority] || d.priority; }),
+        datasets: [{ label: 'Chamados',
+          data: priorityData.map(function(d){ return d.total; }),
+          backgroundColor: priorityData.map(function(d){ return priorityColors[d.priority] || '#2b6fbb'; }),
+          borderColor: '#ffffff',
+          borderWidth: 3 }]
+      },
+      options: { responsive: true, maintainAspectRatio: false,
+        plugins: {
+          legend: { position: 'bottom', labels: { padding: 16, boxWidth: 12 } },
+          tooltip: { callbacks: { label: function(ctx) { return ' ' + ctx.label + ': ' + ctx.raw + ' chamados'; } } }
+        },
+        scales: {
+          r: {
+            beginAtZero: true,
+            ticks: { display: false },
+            grid: { color: 'rgba(148,163,184,0.20)' },
+            angleLines: { color: 'rgba(148,163,184,0.16)' },
+            pointLabels: { color: '#334155', font: { size: 11, weight: '700' } }
+          }
+        }
+      }
+    });
+  }
+
+  if (monthlyData.length) {
+    var monthlyCanvas = document.getElementById('chartMonthly');
+    var monthlyCtx = monthlyCanvas.getContext('2d');
+    new Chart(document.getElementById('chartMonthly'), {
+      type: 'line',
+      data: {
+        labels: monthlyData.map(function(d){ return d.mes; }),
+        datasets: [{ label: 'Chamados', data: monthlyData.map(function(d){ return d.total; }),
+          borderColor: '#2b6fbb',
+          backgroundColor: function(context) {
+            var chart = context.chart;
+            var area = chart.chartArea;
+            if (!area) return 'rgba(43,111,187,0.12)';
+            return createVerticalGradient(monthlyCtx, area, 'rgba(43,111,187,0.02)', 'rgba(43,111,187,0.28)');
+          },
+          borderWidth: 2.5, fill: true, tension: 0.4,
+          pointBackgroundColor: '#ffffff', pointBorderColor: '#2b6fbb', pointBorderWidth: 3,
+          pointRadius: 4, pointHoverRadius: 7, pointHoverBackgroundColor: '#2b6fbb' }]
+      },
+      options: { responsive: true, maintainAspectRatio: false,
+        interaction: { mode: 'index', intersect: false },
+        plugins: { legend: { display: false } },
+        scales: { y: { beginAtZero: true, ticks: { stepSize: 1 }, grid: { color: 'rgba(148,163,184,0.16)' }, border: { display: false } },
+                  x: { grid: { display: false }, border: { display: false } } }
+      }
+    });
+  }
+
+  if (categoriesData.length) {
+    var categoriesCanvas = document.getElementById('chartCategories');
+    var categoriesCtx = categoriesCanvas.getContext('2d');
+    new Chart(document.getElementById('chartCategories'), {
+      type: 'bar',
+      data: {
+        labels: categoriesData.map(function(d){ return d.name || 'Sem categoria'; }),
+        datasets: [{ label: 'Chamados', data: categoriesData.map(function(d){ return d.total; }),
+          backgroundColor: function(context) {
+            var chart = context.chart;
+            var area = chart.chartArea;
+            if (!area) return '#2b6fbb';
+            return createHorizontalGradient(categoriesCtx, area, '#8ec5ff', '#2b6fbb');
+          },
+          borderRadius: 999, borderSkipped: false, barThickness: 16 }]
+      },
+      options: { indexAxis: 'y', responsive: true, maintainAspectRatio: false,
+        plugins: { legend: { display: false } },
+        scales: { x: { beginAtZero: true, ticks: { stepSize: 1 }, grid: { color: 'rgba(148,163,184,0.16)' }, border: { display: false } },
+                  y: { grid: { display: false }, border: { display: false } } }
+      }
+    });
+  }
+
+  if (agentsData.length) {
+    var agentsCanvas = document.getElementById('chartAgents');
+    var agentsCtx = agentsCanvas.getContext('2d');
+    new Chart(document.getElementById('chartAgents'), {
+      type: 'bar',
+      data: {
+        labels: agentsData.map(function(d){ return d.name; }),
+        datasets: [{ label: 'Chamados', data: agentsData.map(function(d){ return d.total; }),
+          backgroundColor: function(context) {
+            var chart = context.chart;
+            var area = chart.chartArea;
+            if (!area) return '#0d9488';
+            return createHorizontalGradient(agentsCtx, area, '#82f3d0', '#0d9488');
+          },
+          borderRadius: 999, borderSkipped: false, barThickness: 16 }]
+      },
+      options: { indexAxis: 'y', responsive: true, maintainAspectRatio: false,
+        plugins: { legend: { display: false } },
+        scales: { x: { beginAtZero: true, ticks: { stepSize: 1 }, grid: { color: 'rgba(148,163,184,0.16)' }, border: { display: false } },
+                  y: { grid: { display: false }, border: { display: false } } }
+      }
+    });
+  }
+})();
+</script>
+
+
+    </main>
+
+    
+    <footer class="app-footer">
+      <div class="container-fluid">
+        <div class="app-footer-inner">
+
+          <div class="app-footer-brand">
+            <img src="/img/logo-grupo-amep.png" alt="Grupo Amep" class="app-footer-logo" />
+            <span class="app-footer-brand-name">Help Desk &mdash; Grupo Amep</span>
+          </div>
+
+          <p class="app-footer-copy">
+            &copy; 2026 Marcos Pereira. Todos os direitos reservados.
+          </p>
+
+          <div class="app-footer-links">
+            <a href="https://www.linkedin.com/in/marcos-pereirarj-dev" target="_blank" rel="noopener noreferrer" class="app-footer-link" title="LinkedIn">
+              <svg width="18" height="18" viewBox="0 0 24 24" fill="currentColor"><path d="M16 8a6 6 0 0 1 6 6v7h-4v-7a2 2 0 0 0-2-2 2 2 0 0 0-2 2v7h-4v-7a6 6 0 0 1 6-6z"/><rect x="2" y="9" width="4" height="12"/><circle cx="4" cy="4" r="2"/></svg>
+              LinkedIn
+            </a>
+            <a href="https://wa.me/5521975939048" target="_blank" rel="noopener noreferrer" class="app-footer-link app-footer-link--wa" title="WhatsApp">
+              <svg width="18" height="18" viewBox="0 0 24 24" fill="currentColor"><path d="M17.472 14.382c-.297-.149-1.758-.867-2.03-.967-.273-.099-.471-.148-.67.15-.197.297-.767.966-.94 1.164-.173.199-.347.223-.644.075-.297-.15-1.255-.463-2.39-1.475-.883-.788-1.48-1.761-1.653-2.059-.173-.297-.018-.458.13-.606.134-.133.298-.347.446-.52.149-.174.198-.298.298-.497.099-.198.05-.371-.025-.52-.075-.149-.669-1.612-.916-2.207-.242-.579-.487-.5-.669-.51-.173-.008-.371-.01-.57-.01-.198 0-.52.074-.792.372-.272.297-1.04 1.016-1.04 2.479 0 1.462 1.065 2.875 1.213 3.074.149.198 2.096 3.2 5.077 4.487.709.306 1.262.489 1.694.625.712.227 1.36.195 1.871.118.571-.085 1.758-.719 2.006-1.413.248-.694.248-1.289.173-1.413-.074-.124-.272-.198-.57-.347z"/><path d="M12 0C5.373 0 0 5.373 0 12c0 2.125.558 4.122 1.533 5.855L.057 23.998l6.305-1.654A11.954 11.954 0 0 0 12 24c6.627 0 12-5.373 12-12S18.627 0 12 0zm0 21.818a9.818 9.818 0 0 1-5.002-1.366l-.359-.214-3.72.976.994-3.636-.234-.373A9.799 9.799 0 0 1 2.182 12C2.182 6.579 6.579 2.182 12 2.182S21.818 6.579 21.818 12 17.421 21.818 12 21.818z"/></svg>
+              021 975939048
+            </a>
+          </div>
+
+        </div>
+      </div>
+    </footer>
+    
+
+    <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/js/bootstrap.bundle.min.js"></script>
+  </body>
+</html>
+
+

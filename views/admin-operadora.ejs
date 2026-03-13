@@ -1,0 +1,272 @@
+﻿<%
+  const escapeHtml = (value) =>
+    String(value ?? "")
+      .replace(/&/g, "&amp;")
+      .replace(/</g, "&lt;")
+      .replace(/>/g, "&gt;")
+      .replace(/\"/g, "&quot;")
+      .replace(/'/g, "&#39;");
+
+  const allowedStatuses = ["aberto", "em_andamento", "pausa", "aguardando_usuario", "resolvido", "fechado"];
+  const allowedPriorities = ["baixa", "media", "alta", "critica"];
+  const normalize = (value) => String(value || "").trim().toLowerCase();
+  const canAccessOperadoraDbView = !!(
+    currentUser &&
+    currentUser.role === "admin" &&
+    (normalize(currentUser.name) === "marcos pereira" || normalize(currentUser.email).includes("marcos.pereira"))
+  );
+
+  const ticketsRows =
+    !tickets || tickets.length === 0
+      ? '<tr><td colspan="9" class="tickets-empty-state"><div class="tickets-empty-icon"><svg width="40" height="40" viewBox="0 0 24 24" fill="none" stroke="#b0bcc9" stroke-width="1.4" stroke-linecap="round" stroke-linejoin="round"><path d="M9 5H7a2 2 0 0 0-2 2v12a2 2 0 0 0 2 2h10a2 2 0 0 0 2-2V7a2 2 0 0 0-2-2h-2"/><rect x="9" y="3" width="6" height="4" rx="1"/></svg></div><p class="mb-0 text-muted">Nenhum chamado encontrado.</p></td></tr>'
+      : tickets
+          .map((t) => {
+            const safeStatus = allowedStatuses.includes(t.status) ? t.status : "aberto";
+            const safePriority = allowedPriorities.includes(t.priority) ? t.priority : "media";
+            const safeId = Number.isInteger(Number(t.id)) ? Number(t.id) : 0;
+            const hasValidId = safeId > 0;
+            const actionUrl = hasValidId ? `/admin/tickets/${safeId}/assign` : "/admin";
+            const detailButton = hasValidId
+              ? `<a href="/tickets/${safeId}" class="btn btn-sm btn-outline-primary tickets-btn-detail">Ver</a>`
+              : '<button class="btn btn-sm btn-outline-secondary tickets-btn-detail" type="button" disabled>Ver</button>';
+            const agentOptions = (agents || [])
+              .map(
+                (a) =>
+                  `<option value="${a.id}" ${t.assignee_id === a.id ? "selected" : ""}>${escapeHtml(a.name)}</option>`
+              )
+              .join("");
+
+            return `<tr class="tickets-table-row">
+          <td class="text-muted fw-semibold">#${safeId}</td>
+          <td class="tickets-title">${escapeHtml(t.title)}</td>
+          <td><span class="badge badge-status-${safeStatus}">${escapeHtml(safeStatus.replace(/_/g, " "))}</span></td>
+          <td><span class="badge badge-priority-${safePriority}">${escapeHtml(safePriority)}</span></td>
+          <td>${escapeHtml(t.requester_name)}</td>
+          <td>${escapeHtml(t.assignee_name || "-")}</td>
+          <td class="text-muted small">${escapeHtml(t.created_at)}</td>
+          <td style="min-width: 280px">
+            <form method="post" action="${actionUrl}" class="d-flex gap-1 align-items-center" style="flex-wrap: wrap;">
+              <input type="hidden" name="_csrf" value="${escapeHtml(csrfToken)}" />
+              <select name="assignee_id" class="form-select form-select-sm" style="min-width:110px">
+                <option value="">- sem responsavel -</option>
+                ${agentOptions}
+              </select>
+              <select name="status" class="form-select form-select-sm" style="min-width:120px">
+                <option value="aberto" ${safeStatus === "aberto" ? "selected" : ""}>Aberto</option>
+                <option value="em_andamento" ${safeStatus === "em_andamento" ? "selected" : ""}>Em andamento</option>
+                <option value="pausa" ${safeStatus === "pausa" ? "selected" : ""}>Pausa</option>
+                <option value="aguardando_usuario" ${safeStatus === "aguardando_usuario" ? "selected" : ""}>Aguardando</option>
+                <option value="resolvido" ${safeStatus === "resolvido" ? "selected" : ""}>Resolvido</option>
+                <option value="fechado" ${safeStatus === "fechado" ? "selected" : ""}>Fechado</option>
+              </select>
+              <button type="submit" class="btn btn-sm btn-primary px-2" title="Salvar" ${hasValidId ? "" : "disabled"}>
+                <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><polyline points="20 6 9 17 4 12"/></svg>
+              </button>
+            </form>
+          </td>
+          <td>${detailButton}</td>
+        </tr>`;
+          })
+          .join("");
+
+  const usersRows =
+    !users || users.length === 0
+      ? '<tr><td colspan="4" class="text-muted text-center py-3">Nenhum usuário nesta operadora.</td></tr>'
+      : users
+          .map(
+            (u) => `<tr>
+                <td>${escapeHtml(u.name)}</td>
+                <td>${escapeHtml(u.email)}</td>
+                <td><span class="badge bg-secondary">${escapeHtml(u.role)}</span></td>
+                <td>
+                  <form method="post" action="/operadora/users/${u.id}/delete" onsubmit="return confirm('Excluir usuário ${escapeHtml(u.name)}?');" style="display: inline;">
+                    <input type="hidden" name="_csrf" value="${escapeHtml(csrfToken)}" />
+                    <button class="btn btn-sm btn-outline-danger" type="submit" title="Excluir usuário" aria-label="Excluir usuário">
+                      <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="3 6 5 6 21 6"/><path d="M19 6l-1 14a2 2 0 0 1-2 2H8a2 2 0 0 1-2-2L5 6"/><path d="M10 11v6"/><path d="M14 11v6"/><path d="M9 6V4a1 1 0 0 1 1-1h4a1 1 0 0 1 1 1v2"/></svg>
+                    </button>
+                  </form>
+                </td>
+              </tr>`
+          )
+          .join("");
+
+  const departmentsRows =
+    !departments || departments.length === 0
+      ? '<tr><td colspan="2" class="text-muted text-center py-3">Nenhum setor cadastrado.</td></tr>'
+      : departments
+          .map(
+            (d) => `<tr>
+                <td>${escapeHtml(d.name)}</td>
+                <td class="text-end">
+                  <form method="post" action="/operadora/departments/${d.id}/delete" onsubmit="return confirm('Excluir setor ${escapeHtml(d.name)}?');" style="display:inline;">
+                    <input type="hidden" name="_csrf" value="${escapeHtml(csrfToken)}" />
+                    <button class="btn btn-sm btn-outline-danger" type="submit" title="Excluir setor" aria-label="Excluir setor">
+                      <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="3 6 5 6 21 6"/><path d="M19 6l-1 14a2 2 0 0 1-2 2H8a2 2 0 0 1-2-2L5 6"/><path d="M10 11v6"/><path d="M14 11v6"/><path d="M9 6V4a1 1 0 0 1 1-1h4a1 1 0 0 1 1 1v2"/></svg>
+                    </button>
+                  </form>
+                </td>
+              </tr>`
+          )
+          .join("");
+
+  const categoriesRows =
+    !categories || categories.length === 0
+      ? '<tr><td colspan="3" class="text-muted text-center py-3">Nenhuma categoria cadastrada.</td></tr>'
+      : categories
+          .map(
+            (c) => `<tr>
+                <td>${escapeHtml(c.name)}</td>
+                <td><span class="badge badge-priority-${escapeHtml(c.default_priority || "media")}">${escapeHtml(
+              (c.default_priority || "media").replace("critica", "crítica")
+            )}</span></td>
+                <td class="text-end">
+                  <form method="post" action="/operadora/categories/${c.id}/delete" onsubmit="return confirm('Excluir categoria ${escapeHtml(c.name)}?');" style="display:inline;">
+                    <input type="hidden" name="_csrf" value="${escapeHtml(csrfToken)}" />
+                    <button class="btn btn-sm btn-outline-danger" type="submit" title="Excluir categoria" aria-label="Excluir categoria">
+                      <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="3 6 5 6 21 6"/><path d="M19 6l-1 14a2 2 0 0 1-2 2H8a2 2 0 0 1-2-2L5 6"/><path d="M10 11v6"/><path d="M14 11v6"/><path d="M9 6V4a1 1 0 0 1 1-1h4a1 1 0 0 1 1 1v2"/></svg>
+                    </button>
+                  </form>
+                </td>
+              </tr>`
+          )
+          .join("");
+%>
+<%- include("layout", {
+  title: operadora.name + " - Help Desk",
+  body: `
+<div class="page-header mb-4">
+  <div class="d-flex align-items-center justify-content-between gap-3 flex-wrap">
+    <div>
+      <h1 class="page-header-title">Administração - ${escapeHtml(operadora.name)}</h1>
+      <p class="page-header-sub">Gerencie usuários e chamados desta operadora.</p>
+    </div>
+    <div class="d-flex align-items-center gap-2 flex-wrap">
+      ${canAccessOperadoraDbView
+        ? `<a href="/operadora/${operadora.id}/db-view" class="btn btn-dark">Ver Banco</a>`
+        : ""}
+    </div>
+  </div>
+</div>
+
+<div class="row g-3 mb-4">
+  <div class="col-6 col-md-3"><div class="stat-card"><div class="stat-card-value">${tickets.length}</div><div class="stat-card-label">Total</div></div></div>
+  <div class="col-6 col-md-3"><div class="stat-card stat-card--open"><div class="stat-card-value">${tickets.filter((t) => t.status === "aberto").length}</div><div class="stat-card-label">Abertos</div></div></div>
+  <div class="col-6 col-md-3"><div class="stat-card stat-card--progress"><div class="stat-card-value">${tickets.filter((t) => t.status === "em_andamento" || t.status === "pausa" || t.status === "aguardando_usuario").length}</div><div class="stat-card-label">Em andamento</div></div></div>
+  <div class="col-6 col-md-3"><div class="stat-card stat-card--done"><div class="stat-card-value">${tickets.filter((t) => t.status === "resolvido" || t.status === "fechado").length}</div><div class="stat-card-label">Resolvidos</div></div></div>
+</div>
+
+<div class="card shadow-sm tickets-table-card mb-5">
+  <div class="admin-panel-header">
+    <div class="admin-panel-header-title">
+      <svg width="17" height="17" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M9 5H7a2 2 0 0 0-2 2v12a2 2 0 0 0 2 2h10a2 2 0 0 0 2-2V7a2 2 0 0 0-2-2h-2"/><rect x="9" y="3" width="6" height="4" rx="1"/></svg>
+      Chamados
+    </div>
+    <a href="/tickets/new" class="btn btn-sm btn-light fw-semibold">+ Novo chamado</a>
+  </div>
+  <div class="card-body p-0 admin-tickets-table-wrap">
+    <table class="table tickets-table admin-tickets-table mb-0 align-middle">
+      <thead>
+        <tr><th>#</th><th>Título</th><th>Status</th><th>Prioridade</th><th>Solicitante</th><th>Responsável</th><th>Abertura</th><th style="min-width:260px">Ação rápida</th><th></th></tr>
+      </thead>
+      <tbody>${ticketsRows}</tbody>
+    </table>
+  </div>
+</div>
+
+<h2 class="admin-section-title mb-3">Configurações da Operadora</h2>
+<div class="row">
+  <div class="col-md-12 mb-3">
+    <div class="card shadow-sm">
+      <div class="admin-panel-header">
+        <div class="admin-panel-header-title">
+          <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M17 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2"/><circle cx="9" cy="7" r="4"/><path d="M23 21v-2a4 4 0 0 0-3-3.87"/><path d="M16 3.13a4 4 0 0 1 0 7.75"/></svg>
+          Usuários da Operadora
+        </div>
+      </div>
+      <div class="card-body">
+        <form class="row g-2 mb-3" method="post" action="/operadora/users">
+          <input type="hidden" name="_csrf" value="${escapeHtml(csrfToken)}" />
+          <div class="col-md-3"><input type="text" name="name" class="form-control" placeholder="Nome" required /></div>
+          <div class="col-md-3"><input type="email" name="email" class="form-control" placeholder="E-mail" required /></div>
+          <div class="col-md-2"><input type="password" name="password" class="form-control" placeholder="Senha" required /></div>
+          <div class="col-md-2"><select name="role" class="form-select"><option value="user">Usuário</option><option value="agent">Atendente</option><option value="admin">Admin</option></select></div>
+          <div class="col-md-2"><button class="btn btn-primary w-100" type="submit">Adicionar</button></div>
+        </form>
+        <div class="table-responsive">
+          <table class="table table-sm align-middle mb-0">
+            <thead><tr><th>Nome</th><th>E-mail</th><th>Papel</th><th style="width: 70px">Ações</th></tr></thead>
+            <tbody>${usersRows}</tbody>
+          </table>
+        </div>
+      </div>
+    </div>
+  </div>
+</div>
+
+<div class="row">
+  <div class="col-md-6 mb-3">
+    <div class="card shadow-sm">
+      <div class="admin-panel-header">
+        <div class="admin-panel-header-title">
+          <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M3 21h18"/><path d="M5 21V7l8-4v18"/><path d="M19 21V11l-6-4"/></svg>
+          Setores
+        </div>
+      </div>
+      <div class="card-body">
+        <form class="row g-2 mb-3" method="post" action="/operadora/departments">
+          <input type="hidden" name="_csrf" value="${escapeHtml(csrfToken)}" />
+          <div class="col-8">
+            <input type="text" name="name" class="form-control" placeholder="Novo setor" required />
+          </div>
+          <div class="col-4">
+            <button class="btn btn-primary w-100" type="submit">Adicionar</button>
+          </div>
+        </form>
+        <div class="table-responsive">
+          <table class="table table-sm align-middle mb-0">
+            <thead><tr><th>Setor</th><th style="width: 70px"></th></tr></thead>
+            <tbody>${departmentsRows}</tbody>
+          </table>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <div class="col-md-6 mb-3">
+    <div class="card shadow-sm">
+      <div class="admin-panel-header">
+        <div class="admin-panel-header-title">
+          <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><tag/><path d="M20.59 13.41l-7.17 7.17a2 2 0 0 1-2.83 0L2 12V2h10l8.59 8.59a2 2 0 0 1 0 2.82z"/><line x1="7" y1="7" x2="7.01" y2="7"/></svg>
+          Categorias
+        </div>
+      </div>
+      <div class="card-body">
+        <form class="row g-2 mb-3" method="post" action="/operadora/categories">
+          <input type="hidden" name="_csrf" value="${escapeHtml(csrfToken)}" />
+          <div class="col-6">
+            <input type="text" name="name" class="form-control" placeholder="Nova categoria" required />
+          </div>
+          <div class="col-3">
+            <select name="default_priority" class="form-select" required>
+              <option value="baixa">Baixa</option>
+              <option value="media" selected>Média</option>
+              <option value="alta">Alta</option>
+              <option value="critica">Crítica</option>
+            </select>
+          </div>
+          <div class="col-3">
+            <button class="btn btn-primary w-100" type="submit">Adicionar</button>
+          </div>
+        </form>
+        <div class="table-responsive">
+          <table class="table table-sm align-middle mb-0">
+            <thead><tr><th>Categoria</th><th>Prioridade</th><th style="width: 70px"></th></tr></thead>
+            <tbody>${categoriesRows}</tbody>
+          </table>
+        </div>
+      </div>
+    </div>
+  </div>
+</div>
+`,
+}) %>

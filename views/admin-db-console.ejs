@@ -1,0 +1,408 @@
+<%
+  const escapeHtml = (value) =>
+    String(value ?? "")
+      .replace(/&/g, "&amp;")
+      .replace(/</g, "&lt;")
+      .replace(/>/g, "&gt;")
+      .replace(/\"/g, "&quot;")
+      .replace(/'/g, "&#39;");
+
+  const sqlValue = escapeHtml(sql || "");
+  const tableList = Array.isArray(tables) ? tables : [];
+  const currentScope = selectedScope === "operadora" ? "operadora" : "amep";
+  const currentAmepOperadoraId = Number(amepOperadoraId) || null;
+  const currentOperadoraUnidadeId = Number(operadoraUnidadeId) || null;
+  const hasReadResult = result && result.mode === "read";
+  const hasWriteResult = result && result.mode === "write";
+  const resultRows = hasReadResult && Array.isArray(result.rows) ? result.rows : [];
+  const resultColumns = resultRows.length > 0 ? Object.keys(resultRows[0]) : [];
+%>
+<%- include("layout", {
+  title: "Console do Banco - Help Desk",
+  body: `
+<style>
+  .db-console-shell {
+    background: linear-gradient(180deg, #f5f9ff, #eef4fb);
+    border: 1px solid #d6e3f5;
+    border-radius: 18px;
+    padding: 1.2rem;
+    box-shadow: 0 14px 28px rgba(18, 58, 111, 0.08);
+  }
+  .db-console-header {
+    display: flex;
+    justify-content: space-between;
+    align-items: flex-start;
+    gap: 0.8rem;
+    flex-wrap: wrap;
+    margin-bottom: 1rem;
+  }
+  .db-console-title {
+    margin: 0;
+    color: #123a6f;
+    font-weight: 800;
+    font-size: 1.35rem;
+  }
+  .db-console-subtitle {
+    margin: 0.2rem 0 0;
+    color: #5f7696;
+    font-size: 0.86rem;
+  }
+  .db-console-grid {
+    display: grid;
+    grid-template-columns: 1.3fr 0.7fr;
+    gap: 0.9rem;
+  }
+  .db-card {
+    background: #ffffff;
+    border: 1px solid #dde8f6;
+    border-radius: 14px;
+    padding: 1rem;
+  }
+  .db-card-title {
+    margin: 0 0 0.6rem;
+    font-size: 0.9rem;
+    color: #1f3f66;
+    font-weight: 700;
+  }
+  .db-sql-textarea {
+    width: 100%;
+    min-height: 240px;
+    border: 1px solid #bfd2ea;
+    border-radius: 12px;
+    background: #fbfdff;
+    color: #102a45;
+    font-family: "Consolas", "Courier New", monospace;
+    font-size: 0.84rem;
+    line-height: 1.45;
+    padding: 0.75rem 0.8rem;
+    resize: vertical;
+  }
+  .db-actions {
+    margin-top: 0.7rem;
+    display: flex;
+    gap: 0.5rem;
+    flex-wrap: wrap;
+    align-items: center;
+  }
+  .db-chip {
+    background: #eff5fc;
+    border: 1px solid #d9e7f7;
+    border-radius: 999px;
+    padding: 0.25rem 0.6rem;
+    font-size: 0.74rem;
+    color: #365b86;
+    font-weight: 700;
+    cursor: pointer;
+  }
+  .db-chip:hover {
+    background: #e5f0fb;
+  }
+  .db-table-list {
+    max-height: 280px;
+    overflow: auto;
+    border: 1px solid #e3edf9;
+    border-radius: 10px;
+  }
+  .db-table-list-item {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    gap: 0.5rem;
+    padding: 0.5rem 0.65rem;
+    border-bottom: 1px solid #edf3fc;
+    font-size: 0.83rem;
+  }
+  .db-table-list-item:last-child {
+    border-bottom: 0;
+  }
+  .db-result-card {
+    margin-top: 0.9rem;
+  }
+  .db-result-table-wrap {
+    max-height: 330px;
+    overflow: auto;
+    border: 1px solid #dbe8f7;
+    border-radius: 10px;
+  }
+  .db-result-table {
+    margin: 0;
+    min-width: 560px;
+    font-size: 0.8rem;
+  }
+  .db-result-table thead {
+    position: sticky;
+    top: 0;
+    background: #f5f9ff;
+    z-index: 1;
+  }
+  .db-note {
+    font-size: 0.76rem;
+    color: #607a9d;
+    margin: 0.45rem 0 0;
+  }
+  .db-inline-result {
+    margin-top: 0.9rem;
+    border: 1px solid #dbe8f7;
+    border-radius: 10px;
+    background: #ffffff;
+    padding: 0.7rem;
+  }
+  .db-inline-result-header {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 0.5rem;
+    margin-bottom: 0.5rem;
+  }
+  .db-inline-result-title {
+    margin: 0;
+    font-size: 0.82rem;
+    color: #1f3f66;
+    font-weight: 800;
+  }
+  .db-danger-zone {
+    margin-top: 0.9rem;
+    border: 1px solid #f5c2c7;
+    background: #fff5f6;
+    border-radius: 10px;
+    padding: 0.75rem;
+  }
+  .db-danger-zone-title {
+    margin: 0 0 0.35rem;
+    color: #8a1f2d;
+    font-size: 0.82rem;
+    font-weight: 800;
+  }
+  .db-scope-switch {
+    display: flex;
+    gap: 0.5rem;
+    flex-wrap: wrap;
+    margin-bottom: 0.75rem;
+  }
+  .db-scope-hint {
+    margin: 0.35rem 0 0;
+    font-size: 0.76rem;
+    color: #607a9d;
+  }
+  @media (max-width: 992px) {
+    .db-console-grid {
+      grid-template-columns: 1fr;
+    }
+  }
+</style>
+
+<div class="db-console-shell" data-amep-operadora-id="${escapeHtml(currentAmepOperadoraId == null ? "" : currentAmepOperadoraId)}" data-operadora-unidade-id="${escapeHtml(currentOperadoraUnidadeId == null ? "" : currentOperadoraUnidadeId)}">
+  <div class="db-console-header">
+    <div>
+      <h1 class="db-console-title">Console do Banco de Dados</h1>
+      <p class="db-console-subtitle">Execute consultas SQL, veja resultados em tabela e aplique comandos de manutencao de forma direta.</p>
+    </div>
+    <a href="/admin" class="btn btn-outline-secondary btn-sm">Voltar para Administracao</a>
+  </div>
+
+  <div class="db-console-grid">
+    <div class="db-card">
+      <h2 class="db-card-title">Editor SQL</h2>
+      <form method="get" action="/admin/db-console" class="mb-2">
+        <div class="db-scope-switch">
+          <button type="submit" name="scope" value="amep" class="btn btn-sm ${currentScope === "amep" ? "btn-primary" : "btn-outline-primary"}">Banco AMEP</button>
+          <button type="submit" name="scope" value="operadora" class="btn btn-sm ${currentScope === "operadora" ? "btn-primary" : "btn-outline-primary"}">Banco Operadora</button>
+        </div>
+      </form>
+
+      <p class="db-scope-hint">Escopo atual: <strong>${currentScope === "amep" ? "Banco AMEP" : "Banco Operadora (unidade Operadora)"}</strong>. Os botoes automáticos respeitam esse filtro.</p>
+
+      <form method="post" action="/admin/db-console">
+        <input type="hidden" name="_csrf" value="${escapeHtml(csrfToken)}" />
+        <input type="hidden" name="scope" value="${escapeHtml(currentScope)}" />
+        <textarea name="sql" class="db-sql-textarea" placeholder="Exemplo: SELECT * FROM tickets ORDER BY created_at DESC LIMIT 50;">${sqlValue}</textarea>
+
+        <div class="db-actions">
+          <button type="submit" class="btn btn-primary btn-sm fw-semibold">Executar SQL</button>
+          <button type="button" class="db-chip" data-smart-template="quick" data-current-table="${escapeHtml(tableList[0] || "tickets")}">Consulta rapida</button>
+          <button type="button" class="db-chip" data-smart-template="users">Usuarios</button>
+          <button type="button" class="db-chip" data-smart-template="tickets">Chamados</button>
+          <button type="button" class="db-chip" data-template="UPDATE tickets SET status = 'aberto' WHERE id = 1;">Exemplo UPDATE</button>
+        </div>
+      </form>
+      <p class="db-note">Dica: para melhor controle, execute um comando por vez. O resultado de leitura aparece em tabela logo abaixo.</p>
+
+      ${hasWriteResult
+        ? `<div class="db-inline-result"><div class="db-inline-result-header"><h3 class="db-inline-result-title">Resultado do comando</h3></div><div class="row g-2"><div class="col-md-4"><div class="p-2 rounded border bg-light"><strong>Linhas afetadas:</strong> ${escapeHtml(result.changes)}</div></div><div class="col-md-4"><div class="p-2 rounded border bg-light"><strong>Ultimo ID:</strong> ${escapeHtml(result.lastID == null ? "-" : result.lastID)}</div></div></div></div>`
+        : ""}
+
+      ${hasReadResult
+        ? `<div class="db-inline-result">
+            <div class="db-inline-result-header">
+              <h3 class="db-inline-result-title">Resultado da consulta</h3>
+              <span class="badge text-bg-primary">${escapeHtml(result.rowCount)} linha(s)</span>
+            </div>
+            ${resultRows.length === 0
+              ? '<div class="alert alert-warning mb-0">Consulta executada com sucesso, mas retornou 0 linhas.</div>'
+              : `<div class="db-result-table-wrap"><table class="table table-sm table-striped db-result-table"><thead><tr>${resultColumns
+                  .map((columnName) => `<th>${escapeHtml(columnName)}</th>`)
+                  .join("")}</tr></thead><tbody>${resultRows
+                  .map(
+                    (row) => `<tr>${resultColumns
+                      .map((columnName) => `<td>${escapeHtml(row[columnName] == null ? "" : row[columnName])}</td>`)
+                      .join("")}</tr>`
+                  )
+                  .join("")}</tbody></table></div>`}
+          </div>`
+        : ""}
+    </div>
+
+    <div class="db-card">
+      <h2 class="db-card-title">Tabelas disponiveis</h2>
+      <div class="db-table-list">
+        ${tableList.length === 0
+          ? '<div class="db-table-list-item"><span>Nenhuma tabela encontrada.</span></div>'
+          : tableList
+            .map(
+              (tableName) => `<div class="db-table-list-item"><span>${escapeHtml(tableName)}</span><button type="button" class="btn btn-outline-primary btn-sm" data-smart-template="table" data-table-name="${escapeHtml(tableName)}">Consultar</button></div>`
+            )
+            .join("")}
+      </div>
+      <p class="db-note">Use os botoes "Consultar" para preencher o editor automaticamente.</p>
+
+      <div class="db-danger-zone">
+        <h3 class="db-danger-zone-title">Excluir chamado (seguro)</h3>
+        <form method="post" action="/admin/db-console/delete-ticket" onsubmit="return confirm('Confirma a exclusao definitiva deste chamado e dos comentarios?');">
+          <input type="hidden" name="_csrf" value="${escapeHtml(csrfToken)}" />
+          <input type="hidden" name="scope" value="${escapeHtml(currentScope)}" />
+          <label for="ticket_id" class="form-label form-label-sm mb-1">ID do chamado</label>
+          <div class="d-flex gap-2">
+            <input id="ticket_id" name="ticket_id" type="number" min="1" step="1" class="form-control form-control-sm" placeholder="Ex: 123" required />
+            <button type="submit" class="btn btn-sm btn-danger fw-semibold">Excluir</button>
+          </div>
+        </form>
+        <p class="db-note mb-0">Esta acao remove comentarios relacionados e depois exclui o chamado.</p>
+      </div>
+    </div>
+  </div>
+
+  ${error ? `<div class="alert alert-danger db-result-card mb-0 mt-3">${escapeHtml(error)}</div>` : ""}
+  ${success ? `<div class="alert alert-success db-result-card mb-0 mt-3">${escapeHtml(success)}</div>` : ""}
+
+</div>
+
+<script>
+  (function () {
+    const textarea = document.querySelector("textarea[name='sql']");
+    if (!textarea) return;
+    const shell = document.querySelector(".db-console-shell");
+    const scopeField = document.querySelector("input[name='scope']");
+    const amepOperadoraId = shell ? String(shell.getAttribute("data-amep-operadora-id") || "").trim() : "";
+    const operadoraUnidadeId = shell ? String(shell.getAttribute("data-operadora-unidade-id") || "").trim() : "";
+
+    const getScope = () => (scopeField && scopeField.value === "operadora" ? "operadora" : "amep");
+
+    const buildScopedTemplate = (tableName) => {
+      const scope = getScope();
+      const isOperadora = scope === "operadora";
+
+      const amepCondition = amepOperadoraId
+        ? "(u.operadora_id = " + amepOperadoraId + " OR u.operadora_id IS NULL)"
+        : "u.operadora_id IS NULL";
+      const operadoraCondition = operadoraUnidadeId
+        ? "u.operadora_id = " + operadoraUnidadeId
+        : "1 = 0";
+
+      if (tableName === "tickets") {
+        return isOperadora
+          ? "SELECT t.id, t.title, t.status, t.priority, t.created_at, t.updated_at, u.name AS requester_name, a.name AS assignee_name FROM tickets t JOIN users u ON u.id = t.requester_id LEFT JOIN users a ON a.id = t.assignee_id WHERE " + operadoraCondition + " ORDER BY t.id DESC LIMIT 50;"
+          : "SELECT t.id, t.title, t.status, t.priority, t.created_at, t.updated_at, u.name AS requester_name, a.name AS assignee_name FROM tickets t JOIN users u ON u.id = t.requester_id LEFT JOIN users a ON a.id = t.assignee_id WHERE " + amepCondition + " ORDER BY t.id DESC LIMIT 50;";
+      }
+
+      if (tableName === "ticket_comments") {
+        const amepRequesterCondition = amepOperadoraId
+          ? "(r.operadora_id = " + amepOperadoraId + " OR r.operadora_id IS NULL)"
+          : "r.operadora_id IS NULL";
+        const operadoraRequesterCondition = operadoraUnidadeId
+          ? "r.operadora_id = " + operadoraUnidadeId
+          : "1 = 0";
+        return isOperadora
+          ? "SELECT c.id, c.ticket_id, c.user_id, u.name AS user_name, c.comment, c.created_at FROM ticket_comments c JOIN tickets t ON t.id = c.ticket_id JOIN users r ON r.id = t.requester_id JOIN users u ON u.id = c.user_id WHERE " + operadoraRequesterCondition + " ORDER BY c.id DESC LIMIT 50;"
+          : "SELECT c.id, c.ticket_id, c.user_id, u.name AS user_name, c.comment, c.created_at FROM ticket_comments c JOIN tickets t ON t.id = c.ticket_id JOIN users r ON r.id = t.requester_id JOIN users u ON u.id = c.user_id WHERE " + amepRequesterCondition + " ORDER BY c.id DESC LIMIT 50;";
+      }
+
+      if (tableName === "users") {
+        const amepUsersCondition = amepOperadoraId
+          ? "(operadora_id = " + amepOperadoraId + " OR operadora_id IS NULL)"
+          : "operadora_id IS NULL";
+        const operadoraUsersCondition = operadoraUnidadeId
+          ? "operadora_id = " + operadoraUnidadeId
+          : "1 = 0";
+        return isOperadora
+          ? "SELECT id, name, email, role FROM users WHERE " + operadoraUsersCondition + " ORDER BY id DESC LIMIT 50;"
+          : "SELECT id, name, email, role FROM users WHERE " + amepUsersCondition + " ORDER BY id DESC LIMIT 50;";
+      }
+
+      if (tableName === "departments") {
+        const amepDepCondition = amepOperadoraId
+          ? "(operadora_id = " + amepOperadoraId + " OR operadora_id IS NULL)"
+          : "operadora_id IS NULL";
+        const operadoraDepCondition = operadoraUnidadeId
+          ? "operadora_id = " + operadoraUnidadeId
+          : "1 = 0";
+        return isOperadora
+          ? "SELECT id, name FROM departments WHERE " + operadoraDepCondition + " ORDER BY id DESC LIMIT 50;"
+          : "SELECT id, name FROM departments WHERE " + amepDepCondition + " ORDER BY id DESC LIMIT 50;";
+      }
+
+      if (tableName === "categories") {
+        const amepCatCondition = amepOperadoraId
+          ? "(operadora_id = " + amepOperadoraId + " OR operadora_id IS NULL)"
+          : "operadora_id IS NULL";
+        const operadoraCatCondition = operadoraUnidadeId
+          ? "operadora_id = " + operadoraUnidadeId
+          : "1 = 0";
+        return isOperadora
+          ? "SELECT id, name, default_priority FROM categories WHERE " + operadoraCatCondition + " ORDER BY id DESC LIMIT 50;"
+          : "SELECT id, name, default_priority FROM categories WHERE " + amepCatCondition + " ORDER BY id DESC LIMIT 50;";
+      }
+
+      return "SELECT * FROM " + tableName + " LIMIT 50;";
+    };
+
+    document.querySelectorAll("[data-template]").forEach((button) => {
+      button.addEventListener("click", () => {
+        const template = button.getAttribute("data-template") || "";
+        textarea.value = template;
+        textarea.focus();
+      });
+    });
+
+    document.querySelectorAll("[data-smart-template]").forEach((button) => {
+      button.addEventListener("click", () => {
+        const type = button.getAttribute("data-smart-template") || "";
+        const currentTable = button.getAttribute("data-current-table") || "tickets";
+        const tableName = button.getAttribute("data-table-name") || "tickets";
+
+        if (type === "quick") {
+          textarea.value = buildScopedTemplate(currentTable);
+          textarea.focus();
+          return;
+        }
+
+        if (type === "users") {
+          textarea.value = buildScopedTemplate("users");
+          textarea.focus();
+          return;
+        }
+
+        if (type === "tickets") {
+          textarea.value = buildScopedTemplate("tickets");
+          textarea.focus();
+          return;
+        }
+
+        if (type === "table") {
+          textarea.value = buildScopedTemplate(tableName);
+          textarea.focus();
+        }
+      });
+    });
+  })();
+</script>
+` }) %>

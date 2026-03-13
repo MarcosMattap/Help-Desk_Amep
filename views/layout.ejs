@@ -1,0 +1,173 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+  <head>
+    <meta charset="UTF-8" />
+    <title><%= title || 'Help Desk' %></title>
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <link rel="preconnect" href="https://fonts.googleapis.com" />
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+    <link
+      href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600&display=swap"
+      rel="stylesheet"
+    />
+    <link
+      href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/css/bootstrap.min.css"
+      rel="stylesheet"
+      integrity="sha384-QWTKZyjpPEjISv5WaRU9OFeRpok6YctnYmDr5pNlyT2bRjXh0JMhjY6hW+ALEwIH"
+      crossorigin="anonymous"
+    />
+    <link rel="stylesheet" href="/css/styles.css" />
+  </head>
+  <body class="bg-light">
+    <% if (currentUser) { %>
+      <header class="app-header">
+        <div class="app-header-top">
+          <div class="container-fluid d-flex align-items-center justify-content-between gap-3 flex-wrap">
+
+            <!-- Marca -->
+            <a class="app-header-brand" href="/tickets">
+              <img src="/img/logo-grupo-amep.png" alt="Grupo Amep" class="app-header-logo" />
+              <div class="app-header-brand-text">
+                <span class="app-header-brand-name">Help Desk</span>
+                <span class="app-header-brand-tagline">Central de Atendimento</span>
+              </div>
+            </a>
+
+            <!-- Toggler mobile -->
+            <button class="navbar-toggler app-header-toggler" type="button"
+              data-bs-toggle="collapse" data-bs-target="#appNav" aria-expanded="false">
+              <span class="navbar-toggler-icon"></span>
+            </button>
+
+            <!-- Navegação -->
+            <div class="collapse navbar-collapse app-nav-collapse" id="appNav">
+              <nav class="app-nav">
+                <a class="app-nav-link" href="/tickets">
+                  <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M9 5H7a2 2 0 0 0-2 2v12a2 2 0 0 0 2 2h10a2 2 0 0 0 2-2V7a2 2 0 0 0-2-2h-2"/><rect x="9" y="3" width="6" height="4" rx="1"/><line x1="9" y1="12" x2="15" y2="12"/><line x1="9" y1="16" x2="12" y2="16"/></svg>
+                  Chamados
+                </a>
+                <a class="app-nav-link" href="/tickets/new">
+                  <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="10"/><line x1="12" y1="8" x2="12" y2="16"/><line x1="8" y1="12" x2="16" y2="12"/></svg>
+                  Abrir chamado
+                </a>
+                <% if (currentUser.role === 'admin') { %>
+                  <% const isMasterAdmin = currentUser.operadora_id === null; %>
+                  <a class="app-nav-link" href="<%= isMasterAdmin ? '/admin' : '/operadora' %>">
+                    <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 2a10 10 0 1 0 0 20A10 10 0 0 0 12 2z"/><path d="M12 8v4l3 3"/></svg>
+                    Administração
+                  </a>
+                  <% if (isMasterAdmin) { %>
+                  <a class="app-nav-link" href="/admin/operadoras">
+                    <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M3 9l9-7 9 7v11a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2z"/><polyline points="9 22 9 12 15 12 15 22"/></svg>
+                    Operadoras
+                  </a>
+                  <a class="app-nav-link" href="/admin/relatorios">
+                    <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><line x1="18" y1="20" x2="18" y2="10"/><line x1="12" y1="20" x2="12" y2="4"/><line x1="6" y1="20" x2="6" y2="14"/></svg>
+                    Relatórios
+                  </a>
+                  <% } else { %>
+                  <a class="app-nav-link" href="/operadora/relatorios">
+                    <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><line x1="18" y1="20" x2="18" y2="10"/><line x1="12" y1="20" x2="12" y2="4"/><line x1="6" y1="20" x2="6" y2="14"/></svg>
+                    Relatórios
+                  </a>
+                  <% } %>
+                <% } %>
+              </nav>
+
+              <!-- Usuário -->
+              <div class="app-header-user">
+                <div class="app-header-avatar"><%= currentUser.name.charAt(0).toUpperCase() %></div>
+                <div class="app-header-user-info">
+                  <span class="app-header-user-name"><%= currentUser.name %></span>
+                  <span class="app-header-user-role"><%= currentUser.role %></span>
+                </div>
+                <div class="app-header-user-actions">
+                  <a href="/account" class="app-header-user-link" title="Minha conta">
+                    <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2"/><circle cx="12" cy="7" r="4"/></svg>
+                  </a>
+                  <a href="/logout" class="app-header-user-link" title="Sair">
+                    <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M9 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h4"/><polyline points="16 17 21 12 16 7"/><line x1="21" y1="12" x2="9" y2="12"/></svg>
+                    Sair
+                  </a>
+                </div>
+              </div>
+            </div>
+
+          </div>
+        </div>
+      </header>
+    <% } %>
+
+    <main class="container app-main">
+      <%- body %>
+    </main>
+
+    <% if (currentUser) { %>
+    <footer class="app-footer">
+      <div class="container-fluid">
+        <div class="app-footer-inner">
+
+          <div class="app-footer-brand">
+            <img src="/img/logo-grupo-amep.png" alt="Grupo Amep" class="app-footer-logo" />
+            <span class="app-footer-brand-name">Help Desk &mdash; Grupo Amep</span>
+          </div>
+
+          <p class="app-footer-copy">
+            &copy; <%= new Date().getFullYear() %> Marcos Pereira. Todos os direitos reservados.
+          </p>
+
+          <div class="app-footer-links">
+            <a href="https://www.linkedin.com/in/marcos-pereirarj-dev" target="_blank" rel="noopener noreferrer" class="app-footer-link" title="LinkedIn">
+              <svg width="18" height="18" viewBox="0 0 24 24" fill="currentColor"><path d="M16 8a6 6 0 0 1 6 6v7h-4v-7a2 2 0 0 0-2-2 2 2 0 0 0-2 2v7h-4v-7a6 6 0 0 1 6-6z"/><rect x="2" y="9" width="4" height="12"/><circle cx="4" cy="4" r="2"/></svg>
+              LinkedIn
+            </a>
+            <a href="https://wa.me/5521975939048" target="_blank" rel="noopener noreferrer" class="app-footer-link app-footer-link--wa" title="WhatsApp">
+              <svg width="18" height="18" viewBox="0 0 24 24" fill="currentColor"><path d="M17.472 14.382c-.297-.149-1.758-.867-2.03-.967-.273-.099-.471-.148-.67.15-.197.297-.767.966-.94 1.164-.173.199-.347.223-.644.075-.297-.15-1.255-.463-2.39-1.475-.883-.788-1.48-1.761-1.653-2.059-.173-.297-.018-.458.13-.606.134-.133.298-.347.446-.52.149-.174.198-.298.298-.497.099-.198.05-.371-.025-.52-.075-.149-.669-1.612-.916-2.207-.242-.579-.487-.5-.669-.51-.173-.008-.371-.01-.57-.01-.198 0-.52.074-.792.372-.272.297-1.04 1.016-1.04 2.479 0 1.462 1.065 2.875 1.213 3.074.149.198 2.096 3.2 5.077 4.487.709.306 1.262.489 1.694.625.712.227 1.36.195 1.871.118.571-.085 1.758-.719 2.006-1.413.248-.694.248-1.289.173-1.413-.074-.124-.272-.198-.57-.347z"/><path d="M12 0C5.373 0 0 5.373 0 12c0 2.125.558 4.122 1.533 5.855L.057 23.998l6.305-1.654A11.954 11.954 0 0 0 12 24c6.627 0 12-5.373 12-12S18.627 0 12 0zm0 21.818a9.818 9.818 0 0 1-5.002-1.366l-.359-.214-3.72.976.994-3.636-.234-.373A9.799 9.799 0 0 1 2.182 12C2.182 6.579 6.579 2.182 12 2.182S21.818 6.579 21.818 12 17.421 21.818 12 21.818z"/></svg>
+              021 975939048
+            </a>
+          </div>
+
+        </div>
+      </div>
+    </footer>
+    <% } %>
+
+    <script>
+      document.addEventListener("DOMContentLoaded", function () {
+        const interactiveSelector = "a, button, input, select, textarea, label, summary, [role='button']";
+
+        document.querySelectorAll("[data-ticket-href]").forEach(function (row) {
+          const navigateToDetails = function () {
+            const targetHref = row.getAttribute("data-ticket-href");
+            if (targetHref) {
+              window.location.href = targetHref;
+            }
+          };
+
+          row.addEventListener("click", function (event) {
+            if (event.target.closest(interactiveSelector) || event.target.closest("form")) {
+              return;
+            }
+
+            navigateToDetails();
+          });
+
+          row.addEventListener("keydown", function (event) {
+            if (event.key !== "Enter" && event.key !== " ") {
+              return;
+            }
+
+            if (event.target.closest(interactiveSelector) || event.target.closest("form")) {
+              return;
+            }
+
+            event.preventDefault();
+            navigateToDetails();
+          });
+        });
+      });
+    </script>
+    <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/js/bootstrap.bundle.min.js"></script>
+  </body>
+</html>
+

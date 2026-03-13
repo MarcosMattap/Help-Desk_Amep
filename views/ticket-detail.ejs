@@ -1,0 +1,126 @@
+<%
+  const escapeHtml = (value) =>
+    String(value ?? "")
+      .replace(/&/g, "&amp;")
+      .replace(/</g, "&lt;")
+      .replace(/>/g, "&gt;")
+      .replace(/\"/g, "&quot;")
+      .replace(/'/g, "&#39;");
+
+  const allowedStatuses = ["aberto", "em_andamento", "pausa", "aguardando_usuario", "resolvido", "fechado"];
+  const allowedPriorities = ["baixa", "media", "alta", "critica"];
+  const safeStatus = allowedStatuses.includes(ticket.status) ? ticket.status : "aberto";
+  const safePriority = allowedPriorities.includes(ticket.priority) ? ticket.priority : "media";
+  const safeTicketId = Number.isInteger(Number(ticket.id)) ? Number(ticket.id) : 0;
+
+%>
+<%- include("layout", {
+    title: "Chamado #" + safeTicketId + " - Help Desk",
+    body: `
+<div class="row">
+  <div class="col-md-8">
+    <div class="card shadow-sm mb-3">
+      <div class="card-body">
+        <h1 class="h4 mb-2">${escapeHtml(ticket.title)}</h1>
+        <p class="mb-1">
+          <strong>Status:</strong>
+          <span class="badge badge-status-${safeStatus}">
+            ${escapeHtml(safeStatus.replace("_", " "))}
+          </span>
+        </p>
+        <p class="mb-1">
+          <strong>Prioridade:</strong>
+          <span class="badge badge-priority-${safePriority}">
+            ${escapeHtml(safePriority)}
+          </span>
+        </p>
+        <p class="mb-1"><strong>Setor:</strong> ${escapeHtml(ticket.department_name || "-")}</p>
+        <p class="mb-1"><strong>Categoria:</strong> ${escapeHtml(ticket.category_name || "-")}</p>
+        <p class="mb-1"><strong>Solicitante:</strong> ${escapeHtml(ticket.requester_name)}</p>
+        <p class="mb-1"><strong>Responsável:</strong> ${escapeHtml(ticket.assignee_name || "-")}</p>
+        <p class="mb-1"><strong>Abertura:</strong> ${escapeHtml(ticket.created_at)}</p>
+        <p class="mb-3"><strong>Última atualização:</strong> ${escapeHtml(ticket.updated_at)}</p>
+        <hr />
+        <p>${escapeHtml(ticket.description)}</p>
+      </div>
+    </div>
+
+    <div class="card shadow-sm mb-3">
+      <div class="card-body">
+        <h2 class="h5 mb-3">Comentários</h2>
+        ${
+          comments.length === 0
+            ? `<p class="text-muted">Nenhum comentário ainda.</p>`
+            : `<ul class="list-group mb-3">
+          ${comments
+            .map(
+              (c) => `
+          <li class="list-group-item">
+            <div class="d-flex justify-content-between">
+              <strong>${escapeHtml(c.user_name)}</strong>
+              <small class="text-muted">${escapeHtml(c.created_at)}</small>
+            </div>
+            <div>${escapeHtml(c.comment)}</div>
+          </li>
+          `
+            )
+            .join("")}
+        </ul>`
+        }
+        <form method="post" action="/tickets/${safeTicketId}/comment">
+          <input type="hidden" name="_csrf" value="${escapeHtml(csrfToken)}" />
+          <div class="mb-3">
+            <label class="form-label">Novo comentário</label>
+            <textarea
+              name="comment"
+              class="form-control"
+              rows="3"
+              required
+            ></textarea>
+          </div>
+          <button type="submit" class="btn btn-primary">
+            Adicionar comentário
+          </button>
+        </form>
+      </div>
+    </div>
+  </div>
+
+  <div class="col-md-4">
+    ${
+      user.role === "agent" || user.role === "admin"
+        ? `
+    <div class="card shadow-sm mb-3">
+      <div class="card-body">
+        <h2 class="h5 mb-3">Atualizar status</h2>
+        <form method="post" action="/tickets/${safeTicketId}/status">
+          <input type="hidden" name="_csrf" value="${escapeHtml(csrfToken)}" />
+          <div class="mb-3">
+            <label class="form-label">Status</label>
+            <select name="status" class="form-select">
+              <option value="aberto" ${safeStatus === "aberto" ? "selected" : ""}>Aberto</option>
+              <option value="em_andamento" ${safeStatus === "em_andamento" ? "selected" : ""}>Em andamento</option>
+              <option value="pausa" ${safeStatus === "pausa" ? "selected" : ""}>Pausa</option>
+              <option value="aguardando_usuario" ${safeStatus === "aguardando_usuario" ? "selected" : ""}>Aguardando usuário</option>
+              <option value="resolvido" ${safeStatus === "resolvido" ? "selected" : ""}>Resolvido</option>
+              <option value="fechado" ${safeStatus === "fechado" ? "selected" : ""}>Fechado</option>
+            </select>
+          </div>
+          <button type="submit" class="btn btn-outline-primary w-100">
+            Salvar
+          </button>
+        </form>
+      </div>
+    </div>
+        `
+        : ""
+    }
+
+    <a href="/tickets" class="btn btn-outline-secondary w-100">
+      Voltar para lista
+    </a>
+  </div>
+</div>
+    `,
+  }) %>
+

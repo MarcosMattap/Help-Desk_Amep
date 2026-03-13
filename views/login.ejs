@@ -1,0 +1,93 @@
+<%
+  const escapeHtml = (value) =>
+    String(value ?? "")
+      .replace(/&/g, "&amp;")
+      .replace(/</g, "&lt;")
+      .replace(/>/g, "&gt;")
+      .replace(/\"/g, "&quot;")
+      .replace(/'/g, "&#39;");
+
+%>
+<%- include("layout", {
+    title: "Login - Help Desk",
+    body: `
+<section class="login-shell">
+  <div class="login-panel shadow-lg">
+    <div class="login-brand-side">
+      <img
+        src="/img/logo-grupo-amep.png"
+        alt="Grupo Amep"
+        class="login-brand-logo"
+      />
+      <h1 class="login-brand-title">Central Help Desk</h1>
+      <p class="login-brand-copy">
+        Acompanhe chamados, organize prioridades e mantenha o atendimento fluindo com clareza.
+      </p>
+    </div>
+
+    <div class="login-form-side">
+      <h2 class="login-form-title">Entrar na plataforma</h2>
+      <p class="login-form-subtitle">Use seu e-mail corporativo para acessar.</p>
+
+      ${error ? `<div class="alert alert-danger">${escapeHtml(error)}</div>` : ""}
+
+      <form method="post" action="/login" class="login-form">
+        <input type="hidden" name="_csrf" value="${escapeHtml(csrfToken)}" />
+        <div class="mb-3">
+          <label class="form-label">E-mail</label>
+          <input
+            type="email"
+            name="email"
+            class="form-control"
+            required
+            autofocus
+          />
+        </div>
+        <div class="mb-4">
+          <label class="form-label">Senha</label>
+          <input
+            type="password"
+            name="password"
+            class="form-control"
+            required
+          />
+        </div>
+        <button type="submit" class="btn btn-primary w-100 login-submit-btn">
+          Entrar
+        </button>
+      </form>
+
+      <footer class="login-footer mt-4">
+        <p class="small mb-2">© 2026 - Marcos Pereira. Todos os direitos reservados.</p>
+        <a
+          class="login-footer-link"
+          href="https://www.linkedin.com/in/marcos-pereirarj-dev"
+          target="_blank"
+          rel="noopener noreferrer"
+        >
+          LinkedIn: www.linkedin.com/in/marcos-pereirarj-dev
+        </a>
+        <a
+          class="login-footer-link login-footer-wa"
+          href="https://wa.me/5521975939048"
+          target="_blank"
+          rel="noopener noreferrer"
+          aria-label="Contato WhatsApp 021 975939048"
+        >
+          <svg
+            class="login-footer-wa-icon"
+            viewBox="0 0 24 24"
+            role="img"
+            aria-hidden="true"
+          >
+            <path d="M20.52 3.48A11.82 11.82 0 0 0 12.1 0 11.94 11.94 0 0 0 1.8 17.85L0 24l6.3-1.75A11.96 11.96 0 0 0 24 12.06a11.78 11.78 0 0 0-3.48-8.58Zm-8.42 18.5a9.94 9.94 0 0 1-5.05-1.38l-.37-.22-3.74 1.04 1-3.64-.24-.38a9.95 9.95 0 1 1 8.4 4.58Zm5.45-7.46c-.3-.15-1.78-.88-2.05-.98-.28-.1-.48-.15-.68.15-.2.3-.78.98-.95 1.18-.18.2-.35.23-.65.08a8.1 8.1 0 0 1-2.38-1.47 8.92 8.92 0 0 1-1.64-2.04c-.18-.3 0-.46.13-.62.14-.14.3-.35.45-.53.15-.18.2-.3.3-.5.1-.2.05-.38-.03-.53-.08-.15-.68-1.63-.93-2.23-.24-.57-.48-.5-.68-.5h-.58c-.2 0-.53.08-.8.38s-1.05 1.03-1.05 2.5 1.08 2.9 1.23 3.1c.15.2 2.1 3.2 5.1 4.48.72.3 1.28.48 1.72.62.72.23 1.38.2 1.9.12.58-.08 1.78-.73 2.03-1.43.25-.7.25-1.3.18-1.43-.08-.12-.28-.2-.58-.35Z" />
+          </svg>
+          WhatsApp: 021 975939048
+        </a>
+      </footer>
+    </div>
+  </div>
+</section>
+    `,
+  }) %>
+

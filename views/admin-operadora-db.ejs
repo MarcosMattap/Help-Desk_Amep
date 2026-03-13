@@ -1,0 +1,74 @@
+<%
+  const escapeHtml = (value) =>
+    String(value ?? "")
+      .replace(/&/g, "&amp;")
+      .replace(/</g, "&lt;")
+      .replace(/>/g, "&gt;")
+      .replace(/\"/g, "&quot;")
+      .replace(/'/g, "&#39;");
+
+  const safeRows = Array.isArray(rows) ? rows : [];
+  const safeColumns = Array.isArray(columns) ? columns : [];
+  const safeTables = Array.isArray(allowedTables) ? allowedTables : [];
+  const currentTable = String(selectedTable || "tickets");
+  const currentLimit = Number(limit) || 50;
+%>
+<%- include("layout", {
+  title: `Banco - ${operadora.name}`,
+  body: `
+<div class="page-header mb-4">
+  <div class="d-flex align-items-center justify-content-between gap-3 flex-wrap">
+    <div>
+      <h1 class="page-header-title">Banco da Operadora - ${escapeHtml(operadora.name)}</h1>
+      <p class="page-header-sub">Visao de leitura dos dados da operadora (escopo isolado).</p>
+    </div>
+    <a href="/operadora/${operadora.id}" class="btn btn-outline-secondary">Voltar para Operadora</a>
+  </div>
+</div>
+
+<div class="card shadow-sm mb-4">
+  <div class="card-body">
+    <form method="get" action="/operadora/${operadora.id}/db-view" class="row g-2 align-items-end">
+      <div class="col-md-5">
+        <label for="table" class="form-label">Tabela</label>
+        <select id="table" name="table" class="form-select">
+          ${safeTables
+            .map((item) => `<option value="${escapeHtml(item.key)}" ${item.key === currentTable ? "selected" : ""}>${escapeHtml(item.label)}</option>`)
+            .join("")}
+        </select>
+      </div>
+      <div class="col-md-3">
+        <label for="limit" class="form-label">Limite de linhas</label>
+        <select id="limit" name="limit" class="form-select">
+          <option value="25" ${currentLimit === 25 ? "selected" : ""}>25</option>
+          <option value="50" ${currentLimit === 50 ? "selected" : ""}>50</option>
+          <option value="100" ${currentLimit === 100 ? "selected" : ""}>100</option>
+          <option value="200" ${currentLimit === 200 ? "selected" : ""}>200</option>
+        </select>
+      </div>
+      <div class="col-md-2">
+        <button type="submit" class="btn btn-primary w-100">Consultar</button>
+      </div>
+    </form>
+  </div>
+</div>
+
+<div class="card shadow-sm">
+  <div class="admin-panel-header">
+    <div class="admin-panel-header-title">${escapeHtml(selectedTableLabel)} (${safeRows.length} linha(s))</div>
+  </div>
+  <div class="card-body p-0">
+    ${safeRows.length === 0
+      ? '<div class="p-3 text-muted">Nenhum dado encontrado para este filtro.</div>'
+      : `<div class="table-responsive"><table class="table table-sm align-middle mb-0"><thead><tr>${safeColumns
+          .map((columnName) => `<th>${escapeHtml(columnName)}</th>`)
+          .join("")}</tr></thead><tbody>${safeRows
+          .map(
+            (row) => `<tr>${safeColumns
+              .map((columnName) => `<td>${escapeHtml(row[columnName] == null ? "" : row[columnName])}</td>`)
+              .join("")}</tr>`
+          )
+          .join("")}</tbody></table></div>`}
+  </div>
+</div>
+` }) %>
