@@ -252,6 +252,10 @@ app.get("/tickets", ensureAuthenticated, (req, res) => {
   if (user.role === "user") {
     query += "WHERE t.requester_id = ? ";
     params.push(user.id);
+  } else if (user.role === "agent") {
+    // Fila do agente: exibe apenas chamados atribuidos a ele no escopo da operadora.
+    query += "WHERE u.operadora_id = ? AND t.assignee_id = ? ";
+    params.push(user.operadora_id, user.id);
   } else if (user.operadora_id) {
     query += "WHERE u.operadora_id = ? ";
     params.push(user.operadora_id);
@@ -1028,6 +1032,12 @@ function queryGet(sql, params = []) {
 async function buildRelatorioData(operadoraId = null) {
   const whereClause = operadoraId === null ? "" : "WHERE u.operadora_id = ?";
   const params = operadoraId === null ? [] : [operadoraId];
+  const normalizedCreatedAtSql =
+    "CASE " +
+    "WHEN t.created_at LIKE '__/__/____ __:__:__' THEN substr(t.created_at, 7, 4) || '-' || substr(t.created_at, 4, 2) || '-' || substr(t.created_at, 1, 2) || substr(t.created_at, 11) " +
+    "ELSE t.created_at END";
+  const weekdayExpr = `strftime('%w', ${normalizedCreatedAtSql})`;
+  const monthExpr = `strftime('%Y-%m', ${normalizedCreatedAtSql})`;
 
   const sqlStatus =
     "SELECT t.status, COUNT(*) as total FROM tickets t JOIN users u ON u.id = t.requester_id " +
@@ -1036,14 +1046,14 @@ async function buildRelatorioData(operadoraId = null) {
     "SELECT t.priority, COUNT(*) as total FROM tickets t JOIN users u ON u.id = t.requester_id " +
     `${whereClause} GROUP BY t.priority`;
   const sqlTopWeekday =
-    "SELECT strftime('%w', t.created_at) as weekday, COUNT(*) as total FROM tickets t JOIN users u ON u.id = t.requester_id " +
-    `${whereClause} GROUP BY weekday ORDER BY total DESC, weekday ASC LIMIT 1`;
+    `SELECT ${weekdayExpr} as weekday, COUNT(*) as total FROM tickets t JOIN users u ON u.id = t.requester_id ` +
+    `${whereClause} GROUP BY weekday HAVING weekday IS NOT NULL ORDER BY total DESC, weekday ASC LIMIT 1`;
   const sqlWeekdayData =
-    "SELECT strftime('%w', t.created_at) as weekday, COUNT(*) as total FROM tickets t JOIN users u ON u.id = t.requester_id " +
-    `${whereClause} GROUP BY weekday ORDER BY weekday ASC`;
+    `SELECT ${weekdayExpr} as weekday, COUNT(*) as total FROM tickets t JOIN users u ON u.id = t.requester_id ` +
+    `${whereClause} GROUP BY weekday HAVING weekday IS NOT NULL ORDER BY weekday ASC`;
   const sqlMonthly =
-    "SELECT strftime('%Y-%m', t.created_at) as mes, COUNT(*) as total FROM tickets t JOIN users u ON u.id = t.requester_id " +
-    `${whereClause}${operadoraId === null ? " WHERE" : " AND"} t.created_at >= date('now', '-6 months') ` +
+    `SELECT ${monthExpr} as mes, COUNT(*) as total FROM tickets t JOIN users u ON u.id = t.requester_id ` +
+    `${whereClause}${operadoraId === null ? " WHERE" : " AND"} ${monthExpr} IS NOT NULL AND date(${normalizedCreatedAtSql}) >= date('now', '-6 months') ` +
     "GROUP BY mes ORDER BY mes ASC";
   const sqlAvgTime =
     "SELECT ROUND(AVG((((julianday(t.resolved_at) - julianday(t.created_at)) * 86400) - COALESCE(t.sla_paused_seconds, 0)) / 3600.0), 1) AS media_horas FROM tickets t JOIN users u ON u.id = t.requester_id " +
@@ -1058,8 +1068,8 @@ async function buildRelatorioData(operadoraId = null) {
     "SELECT COALESCE(d.name, 'Sem setor') AS setor, COUNT(t.id) as total FROM tickets t JOIN users u ON t.requester_id = u.id LEFT JOIN departments d ON t.department_id = d.id " +
     `${whereClause} GROUP BY setor ORDER BY total DESC`;
   const sqlSectorWeekdays =
-    "SELECT COALESCE(d.name, 'Sem setor') AS setor, strftime('%w', t.created_at) as weekday, COUNT(t.id) as total FROM tickets t JOIN users u ON t.requester_id = u.id LEFT JOIN departments d ON t.department_id = d.id " +
-    `${whereClause} GROUP BY setor, weekday ORDER BY setor ASC, weekday ASC`;
+    `SELECT COALESCE(d.name, 'Sem setor') AS setor, ${weekdayExpr} as weekday, COUNT(t.id) as total FROM tickets t JOIN users u ON t.requester_id = u.id LEFT JOIN departments d ON t.department_id = d.id ` +
+    `${whereClause} GROUP BY setor, weekday HAVING weekday IS NOT NULL ORDER BY setor ASC, weekday ASC`;
   const sqlTotal =
     "SELECT COUNT(*) as total FROM tickets t JOIN users u ON u.id = t.requester_id " +
     whereClause;
