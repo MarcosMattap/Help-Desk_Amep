@@ -18,6 +18,7 @@ Sistema completo de gerenciamento de chamados técnicos (help desk) com multi-te
 - [Fluxo de Status dos Chamados](#fluxo-de-status-dos-chamados)
 - [SLA — Acordo de Nível de Serviço](#sla--acordo-de-nível-de-serviço)
 - [Painel Administrativo](#painel-administrativo)
+- [Console do Banco](#console-do-banco)
 - [Relatórios](#relatórios)
 - [Segurança](#segurança)
 - [Tecnologias](#tecnologias)
@@ -44,6 +45,8 @@ O **Help Desk AMEP** é uma aplicação web desenvolvida em Node.js para gerenci
 - Visualização de histórico completo do chamado com comentários em ordem cronológica
 - Comentários por usuários e técnicos diretamente no chamado
 - Listagem inteligente: chamados **abertos** aparecem primeiro, ordenados pelo prazo SLA mais próximo
+- Encaminhamento de chamados para atendentes via **Ação rápida** no painel administrativo
+- Fila do atendente (`agent`) com foco nos chamados **atribuídos ao próprio executante**
 
 ### SLA (Acordo de Nível de Serviço)
 - Prazo padrão de **48 horas** por chamado
@@ -125,7 +128,8 @@ aberto
 - **Gestão de Operadoras**: vincular operadoras às empresas
 - **Setores (Departments)**: criar e gerenciar setores globais
 - **Categorias**: criar categorias com prioridade padrão automática
-- **Todos os chamados**: atribuição de técnicos e atualização de status
+- **Todos os chamados**: atribuição de executante (atendente) e atualização de status em uma única ação
+- **Despacho operacional**: o gestor master direciona o chamado para o atendente responsável e o ticket passa a compor a fila desse executante
 - **Log de auditoria**: histórico das últimas 50 ações administrativas
 - **Console de banco** (exclusivo para o admin master Marcos Pereira): execução direta de SQL com suporte a leitura e escrita
 
@@ -133,6 +137,19 @@ aberto
 - Visão restrita à própria operadora
 - Gerencia chamados, usuários e configurações da operadora
 - Acesso a relatórios da operadora
+
+---
+
+## Console do Banco
+
+Disponível em `/admin/db-console` para o **admin master autorizado**.
+
+- Execução de SQL de leitura (`SELECT`, `WITH`, `PRAGMA`, `EXPLAIN`) com retorno tabular
+- Execução de comandos de escrita (`INSERT`, `UPDATE`, `DELETE`) com confirmação de linhas afetadas
+- Exclusão segura de chamados com validação de escopo e remoção de comentários relacionados
+- Uso recomendado para manutenção operacional e troubleshooting em produção
+
+> Recurso sensível: o acesso é restrito por perfil e validação adicional de identidade no backend.
 
 ---
 
