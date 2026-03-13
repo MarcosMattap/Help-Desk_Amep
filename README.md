@@ -1,7 +1,5 @@
 # Help Desk - Sistema de Chamados (Node.js)
 
-# Help Desk
-
 Sistema de chamados interno com foco em operação multiunidade, controle por perfil e visão gerencial em tempo real.
 
 ## Visão Geral
