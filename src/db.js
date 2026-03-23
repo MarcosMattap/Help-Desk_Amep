@@ -627,6 +627,20 @@ db.serialize(() => {
     )
   `);
 
+  db.run(`
+    CREATE TABLE IF NOT EXISTS notifications (
+      id INTEGER PRIMARY KEY AUTOINCREMENT,
+      user_id INTEGER NOT NULL,
+      type TEXT NOT NULL,
+      message TEXT NOT NULL,
+      ticket_id INTEGER,
+      is_read INTEGER NOT NULL DEFAULT 0,
+      created_at TEXT NOT NULL,
+      FOREIGN KEY (user_id) REFERENCES users(id),
+      FOREIGN KEY (ticket_id) REFERENCES tickets(id)
+    )
+  `);
+
   migrateTicketsTableIfNeeded((migrationErr) => {
     if (migrationErr) {
       console.error("Erro ao aplicar migracao da tabela tickets:", migrationErr);

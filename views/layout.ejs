@@ -35,6 +35,16 @@
               </div>
             </a>
 
+            <!-- Sino de notificação (visível apenas no mobile) -->
+            <a href="/notifications" class="app-notif-bell-mobile" id="notifBellMobile" title="Notificações">
+              <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M18 8A6 6 0 0 0 6 8c0 7-3 9-3 9h18s-3-2-3-9"/><path d="M13.73 21a2 2 0 0 1-3.46 0"/></svg>
+              <% if (typeof unreadNotificationsCount !== 'undefined' && unreadNotificationsCount > 0) { %>
+              <span class="app-notif-badge" id="notifBadgeMobile"><%= unreadNotificationsCount > 99 ? '99+' : unreadNotificationsCount %></span>
+              <% } else { %>
+              <span class="app-notif-badge app-notif-badge--hidden" id="notifBadgeMobile">0</span>
+              <% } %>
+            </a>
+
             <!-- Toggler mobile -->
             <button class="navbar-toggler app-header-toggler" type="button"
               data-bs-toggle="collapse" data-bs-target="#appNav" aria-expanded="false">
@@ -86,6 +96,14 @@
                   <span class="app-header-user-role"><%= currentUser.role %></span>
                 </div>
                 <div class="app-header-user-actions">
+                  <a href="/notifications" class="app-header-user-link app-notif-bell" id="notifBellBtn" title="Notificações">
+                    <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M18 8A6 6 0 0 0 6 8c0 7-3 9-3 9h18s-3-2-3-9"/><path d="M13.73 21a2 2 0 0 1-3.46 0"/></svg>
+                    <% if (typeof unreadNotificationsCount !== 'undefined' && unreadNotificationsCount > 0) { %>
+                    <span class="app-notif-badge" id="notifBadge"><%= unreadNotificationsCount > 99 ? '99+' : unreadNotificationsCount %></span>
+                    <% } else { %>
+                    <span class="app-notif-badge app-notif-badge--hidden" id="notifBadge">0</span>
+                    <% } %>
+                  </a>
                   <a href="/account" class="app-header-user-link" title="Minha conta">
                     <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2"/><circle cx="12" cy="7" r="4"/></svg>
                   </a>
@@ -121,9 +139,9 @@
           </p>
 
           <div class="app-footer-links">
-            <a href="https://www.linkedin.com/in/marcos-pereirarj-dev" target="_blank" rel="noopener noreferrer" class="app-footer-link" title="LinkedIn">
-              <svg width="18" height="18" viewBox="0 0 24 24" fill="currentColor"><path d="M16 8a6 6 0 0 1 6 6v7h-4v-7a2 2 0 0 0-2-2 2 2 0 0 0-2 2v7h-4v-7a6 6 0 0 1 6-6z"/><rect x="2" y="9" width="4" height="12"/><circle cx="4" cy="4" r="2"/></svg>
-              LinkedIn
+            <a href="https://coreswitch.com.br/" target="_blank" rel="noopener noreferrer" class="app-footer-link" title="Site CoreSwitch">
+              <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="10"/><line x1="2" y1="12" x2="22" y2="12"/><path d="M12 2a15.3 15.3 0 0 1 4 10 15.3 15.3 0 0 1-4 10 15.3 15.3 0 0 1-4-10 15.3 15.3 0 0 1 4-10z"/></svg>
+              coreswitch.com.br
             </a>
             <a href="https://wa.me/5521975939048" target="_blank" rel="noopener noreferrer" class="app-footer-link app-footer-link--wa" title="WhatsApp">
               <svg width="18" height="18" viewBox="0 0 24 24" fill="currentColor"><path d="M17.472 14.382c-.297-.149-1.758-.867-2.03-.967-.273-.099-.471-.148-.67.15-.197.297-.767.966-.94 1.164-.173.199-.347.223-.644.075-.297-.15-1.255-.463-2.39-1.475-.883-.788-1.48-1.761-1.653-2.059-.173-.297-.018-.458.13-.606.134-.133.298-.347.446-.52.149-.174.198-.298.298-.497.099-.198.05-.371-.025-.52-.075-.149-.669-1.612-.916-2.207-.242-.579-.487-.5-.669-.51-.173-.008-.371-.01-.57-.01-.198 0-.52.074-.792.372-.272.297-1.04 1.016-1.04 2.479 0 1.462 1.065 2.875 1.213 3.074.149.198 2.096 3.2 5.077 4.487.709.306 1.262.489 1.694.625.712.227 1.36.195 1.871.118.571-.085 1.758-.719 2.006-1.413.248-.694.248-1.289.173-1.413-.074-.124-.272-.198-.57-.347z"/><path d="M12 0C5.373 0 0 5.373 0 12c0 2.125.558 4.122 1.533 5.855L.057 23.998l6.305-1.654A11.954 11.954 0 0 0 12 24c6.627 0 12-5.373 12-12S18.627 0 12 0zm0 21.818a9.818 9.818 0 0 1-5.002-1.366l-.359-.214-3.72.976.994-3.636-.234-.373A9.799 9.799 0 0 1 2.182 12C2.182 6.579 6.579 2.182 12 2.182S21.818 6.579 21.818 12 17.421 21.818 12 21.818z"/></svg>
@@ -172,6 +190,81 @@
       });
     </script>
     <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/js/bootstrap.bundle.min.js"></script>
+    <% if (currentUser) { %>
+    <div id="notifToastContainer"></div>
+    <script>
+      (function () {
+        var badge = document.getElementById("notifBadge");
+        var badgeMobile = document.getElementById("notifBadgeMobile");
+        var badgeCount = badge ? (parseInt(badge.textContent, 10) || 0) : 0;
+
+        function escapHtml(text) {
+          return String(text)
+            .replace(/&/g, "&amp;")
+            .replace(/</g, "&lt;")
+            .replace(/>/g, "&gt;")
+            .replace(/"/g, "&quot;");
+        }
+
+        function updateBadge(count) {
+          badgeCount = Math.max(0, count);
+          [badge, badgeMobile].forEach(function (b) {
+            if (!b) return;
+            if (badgeCount > 0) {
+              b.textContent = badgeCount > 99 ? "99+" : String(badgeCount);
+              b.classList.remove("app-notif-badge--hidden");
+            } else {
+              b.textContent = "0";
+              b.classList.add("app-notif-badge--hidden");
+            }
+          });
+        }
+
+        function showToast(message, type) {
+          var container = document.getElementById("notifToastContainer");
+          if (!container) return;
+          var toast = document.createElement("div");
+          toast.className = "notif-toast" + (type === "new_ticket" ? " notif-toast--admin" : " notif-toast--user");
+          var icon = type === "new_ticket"
+            ? '<svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M9 5H7a2 2 0 0 0-2 2v12a2 2 0 0 0 2 2h10a2 2 0 0 0 2-2V7a2 2 0 0 0-2-2h-2"/><rect x="9" y="3" width="6" height="4" rx="1"/><line x1="12" y1="12" x2="12" y2="16"/><line x1="12" y1="8" x2="12.01" y2="8"/></svg>'
+            : '<svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M18 8A6 6 0 0 0 6 8c0 7-3 9-3 9h18s-3-2-3-9"/><path d="M13.73 21a2 2 0 0 1-3.46 0"/></svg>';
+          toast.innerHTML =
+            '<div class="notif-toast-icon">' + icon + '</div>' +
+            '<div class="notif-toast-body">' + escapHtml(message) + '</div>' +
+            '<button class="notif-toast-close" onclick="this.parentElement.remove()" aria-label="Fechar">&times;</button>';
+          container.appendChild(toast);
+          setTimeout(function () {
+            toast.classList.add("notif-toast--hiding");
+            setTimeout(function () { if (toast.parentNode) toast.remove(); }, 400);
+          }, 7000);
+        }
+
+        // Polling de fallback (a cada 60s)
+        setInterval(function () {
+          fetch("/notifications/count", { credentials: "same-origin" })
+            .then(function (r) { return r.json(); })
+            .then(function (d) { if (typeof d.unreadCount === "number") updateBadge(d.unreadCount); })
+            .catch(function () { /* ignore */ });
+        }, 60000);
+
+        // SSE em tempo real
+        if (typeof EventSource !== "undefined") {
+          var evtSource = new EventSource("/notifications/stream");
+          evtSource.onmessage = function (event) {
+            try {
+              var data = JSON.parse(event.data);
+              if (data.type === "connected") {
+                updateBadge(data.unreadCount || 0);
+                return;
+              }
+              updateBadge(badgeCount + 1);
+              showToast(data.message, data.type);
+            } catch (_) { /* ignore */ }
+          };
+        }
+      })();
+    </script>
+    <% } %>
   </body>
 </html>
 

@@ -1287,3 +1287,232 @@ body {
   }
 }
 
+/* ===================== Notification Bell ===================== */
+.app-notif-bell {
+  position: relative;
+}
+
+/* Sino mobile — visível apenas abaixo de 992px, fora do menu colapsável */
+.app-notif-bell-mobile {
+  display: none;
+  position: relative;
+  align-items: center;
+  justify-content: center;
+  color: #a8c8ea;
+  text-decoration: none;
+  padding: 0.45rem 0.55rem;
+  border-radius: 8px;
+  background-color: rgba(255,255,255,0.08);
+  border: 1px solid rgba(255,255,255,0.18);
+  transition: background 0.15s, color 0.15s;
+  margin-left: auto;
+  margin-right: 0.4rem;
+  flex-shrink: 0;
+}
+
+.app-notif-bell-mobile:hover {
+  background: rgba(255,255,255,0.18);
+  color: #ffffff;
+}
+
+@media (max-width: 991px) {
+  .app-notif-bell-mobile {
+    display: flex;
+  }
+}
+
+.app-notif-badge {
+  position: absolute;
+  top: 2px;
+  right: 2px;
+  background: #dc3545;
+  color: #fff;
+  border-radius: 999px;
+  min-width: 17px;
+  height: 17px;
+  font-size: 0.62rem;
+  font-weight: 700;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: 0 3px;
+  line-height: 1;
+  border: 1.5px solid rgba(255, 255, 255, 0.55);
+  pointer-events: none;
+}
+
+.app-notif-badge--hidden {
+  display: none;
+}
+
+/* ===================== Toast Notifications ===================== */
+#notifToastContainer {
+  position: fixed;
+  bottom: 1.5rem;
+  right: 1.5rem;
+  z-index: 99999;
+  display: flex;
+  flex-direction: column-reverse;
+  gap: 0.5rem;
+  pointer-events: none;
+  max-width: min(360px, calc(100vw - 2rem));
+}
+
+.notif-toast {
+  display: flex;
+  align-items: flex-start;
+  gap: 0.75rem;
+  padding: 0.85rem 1rem;
+  border-radius: 12px;
+  background: #fff;
+  border: 1px solid #e0e8f4;
+  border-left: 4px solid #2b6fbb;
+  box-shadow: 0 8px 28px rgba(0, 0, 0, 0.16);
+  pointer-events: all;
+  animation: notifSlideIn 0.3s ease;
+}
+
+.notif-toast--admin {
+  border-left-color: #198754;
+}
+
+.notif-toast--user {
+  border-left-color: #2b6fbb;
+}
+
+.notif-toast--hiding {
+  animation: notifSlideOut 0.4s ease forwards;
+}
+
+@keyframes notifSlideIn {
+  from { opacity: 0; transform: translateX(60px); }
+  to   { opacity: 1; transform: translateX(0); }
+}
+
+@keyframes notifSlideOut {
+  from { opacity: 1; transform: translateX(0); }
+  to   { opacity: 0; transform: translateX(60px); }
+}
+
+.notif-toast-icon {
+  flex-shrink: 0;
+  margin-top: 0.05rem;
+  color: #2b6fbb;
+}
+
+.notif-toast--admin .notif-toast-icon {
+  color: #198754;
+}
+
+.notif-toast-body {
+  flex: 1;
+  font-size: 0.875rem;
+  color: #1a2e42;
+  line-height: 1.45;
+  word-break: break-word;
+}
+
+.notif-toast-close {
+  flex-shrink: 0;
+  background: none;
+  border: none;
+  color: #7a939b;
+  font-size: 1.15rem;
+  line-height: 1;
+  padding: 0;
+  cursor: pointer;
+  align-self: flex-start;
+}
+
+.notif-toast-close:hover {
+  color: #1a2e42;
+}
+
+/* ===================== Notifications list page ===================== */
+.notif-list-item {
+  display: flex;
+  align-items: center;
+  gap: 1rem;
+  padding: 1rem 1.25rem;
+  background: #fff;
+  transition: background 0.12s;
+}
+
+.notif-list-item:hover {
+  background: #f5f8fc;
+}
+
+.notif-list-item--unread {
+  background: #f0f6ff;
+}
+
+.notif-list-item--unread:hover {
+  background: #e6f0fd;
+}
+
+.notif-list-icon {
+  flex-shrink: 0;
+  width: 38px;
+  height: 38px;
+  border-radius: 50%;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  background: #e8effa;
+  color: #2b6fbb;
+}
+
+.notif-list-icon--admin {
+  background: #e6f4ee;
+  color: #198754;
+}
+
+.notif-list-icon--user {
+  background: #e8effa;
+  color: #2b6fbb;
+}
+
+.notif-list-body {
+  flex: 1;
+  min-width: 0;
+}
+
+.notif-list-message {
+  margin: 0;
+  font-size: 0.875rem;
+  color: #1a2e42;
+  line-height: 1.4;
+}
+
+.notif-list-time {
+  font-size: 0.75rem;
+  color: #7a939b;
+  margin-top: 0.15rem;
+  display: block;
+}
+
+.notif-list-action {
+  flex-shrink: 0;
+  font-size: 0.78rem;
+  padding: 0.25rem 0.6rem;
+  border-radius: 6px;
+}
+
+@media (max-width: 576px) {
+  #notifToastContainer {
+    bottom: 1rem;
+    right: 1rem;
+    left: 1rem;
+    max-width: none;
+  }
+
+  .notif-list-item {
+    padding: 0.8rem 1rem;
+  }
+
+  .notif-list-icon {
+    width: 32px;
+    height: 32px;
+  }
+}
+

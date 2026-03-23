@@ -12,6 +12,35 @@ const {
   isValidTicketPriority,
 } = require("./constants/tickets");
 
+// ===== SSE notification clients =====
+const sseClients = new Map(); // userId (number) => Set<ServerResponse>
+
+function addSseClient(userId, res) {
+  if (!sseClients.has(userId)) {
+    sseClients.set(userId, new Set());
+  }
+  sseClients.get(userId).add(res);
+}
+
+function removeSseClient(userId, res) {
+  const set = sseClients.get(userId);
+  if (set) {
+    set.delete(res);
+    if (set.size === 0) {
+      sseClients.delete(userId);
+    }
+  }
+}
+
+function pushSseEvent(userId, data) {
+  const set = sseClients.get(Number(userId));
+  if (!set || set.size === 0) return;
+  const payload = `data: ${JSON.stringify(data)}\n\n`;
+  set.forEach((clientRes) => {
+    try { clientRes.write(payload); } catch (_) { /* client disconnected */ }
+  });
+}
+
 const app = express();
 const PORT = process.env.PORT || 3000;
 const isProduction = process.env.NODE_ENV === "production";
@@ -132,6 +161,20 @@ app.use((req, res, next) => {
   });
 });
 
+// Conta notificações não lidas para exibir badge no header.
+app.use((req, res, next) => {
+  res.locals.unreadNotificationsCount = 0;
+  if (!req.session.user) return next();
+  db.get(
+    "SELECT COUNT(*) as count FROM notifications WHERE user_id = ? AND is_read = 0",
+    [req.session.user.id],
+    (err, row) => {
+      res.locals.unreadNotificationsCount = (!err && row) ? row.count : 0;
+      return next();
+    }
+  );
+});
+
 function writeAdminAuditLog(req, action, entityType, entityId, details) {
   const adminUserId = req?.session?.user?.id;
   if (!adminUserId) return;
@@ -145,6 +188,55 @@ function writeAdminAuditLog(req, action, entityType, entityId, details) {
       }
     }
   );
+}
+
+// ===== Notification helpers =====
+function notifyUser(userId, type, message, ticketId) {
+  const now = getNowBrazilTime();
+  db.run(
+    "INSERT INTO notifications (user_id, type, message, ticket_id, is_read, created_at) VALUES (?, ?, ?, ?, 0, ?)",
+    [userId, type, message, ticketId || null, now],
+    (err) => {
+      if (!err) {
+        pushSseEvent(Number(userId), { type, message, ticketId: ticketId || null });
+      }
+    }
+  );
+}
+
+function notifyAdminsNewTicket(ticketId, ticketTitle, requesterOperadoraId) {
+  let sql, params;
+  if (requesterOperadoraId) {
+    sql = "SELECT id FROM users WHERE (role = 'admin' AND operadora_id IS NULL) OR (role IN ('admin', 'agent') AND operadora_id = ?)";
+    params = [requesterOperadoraId];
+  } else {
+    sql = "SELECT id FROM users WHERE role = 'admin' AND operadora_id IS NULL";
+    params = [];
+  }
+  db.all(sql, params, (err, admins) => {
+    if (err || !admins) return;
+    const message = `Novo chamado #${ticketId}: "${ticketTitle}"`;
+    admins.forEach((admin) => {
+      notifyUser(admin.id, "new_ticket", message, ticketId);
+    });
+  });
+}
+
+function notifyRequesterStatusChange(ticketId, newStatus) {
+  const statusLabels = {
+    aberto: "Aberto",
+    em_andamento: "Em andamento",
+    pausa: "Pausado",
+    aguardando_usuario: "Aguardando usu\u00e1rio",
+    resolvido: "Resolvido",
+    fechado: "Fechado",
+  };
+  db.get("SELECT requester_id, title FROM tickets WHERE id = ?", [ticketId], (err, ticket) => {
+    if (err || !ticket) return;
+    const statusLabel = statusLabels[newStatus] || newStatus;
+    const message = `Chamado #${ticketId} "${ticket.title}" atualizado para: ${statusLabel}`;
+    notifyUser(ticket.requester_id, "status_change", message, ticketId);
+  });
 }
 
 function getOperadoraDbViewConfig(tableName) {
@@ -199,6 +291,70 @@ function getOperadoraDbViewConfig(tableName) {
 
   return configs[tableName] || configs.tickets;
 }
+
+// ===== SSE stream de notificações =====
+app.get("/notifications/stream", ensureAuthenticated, (req, res) => {
+  const userId = Number(req.session.user.id);
+  res.setHeader("Content-Type", "text/event-stream");
+  res.setHeader("Cache-Control", "no-cache");
+  res.setHeader("Connection", "keep-alive");
+  res.flushHeaders();
+
+  db.get(
+    "SELECT COUNT(*) as count FROM notifications WHERE user_id = ? AND is_read = 0",
+    [userId],
+    (err, row) => {
+      const unreadCount = (!err && row) ? row.count : 0;
+      try {
+        res.write(`data: ${JSON.stringify({ type: "connected", unreadCount })}\n\n`);
+      } catch (_) { /* ignore */ }
+    }
+  );
+
+  addSseClient(userId, res);
+
+  const keepAlive = setInterval(() => {
+    try { res.write(":keepalive\n\n"); } catch (_) { /* ignore */ }
+  }, 25000);
+
+  req.on("close", () => {
+    clearInterval(keepAlive);
+    removeSseClient(userId, res);
+  });
+});
+
+// ===== Rotas de notificações =====
+app.get("/notifications/count", ensureAuthenticated, (req, res) => {
+  db.get(
+    "SELECT COUNT(*) as count FROM notifications WHERE user_id = ? AND is_read = 0",
+    [req.session.user.id],
+    (err, row) => {
+      const count = (!err && row) ? row.count : 0;
+      return res.json({ unreadCount: count });
+    }
+  );
+});
+
+app.get("/notifications", ensureAuthenticated, (req, res) => {
+  const userId = req.session.user.id;
+  db.all(
+    "SELECT * FROM notifications WHERE user_id = ? ORDER BY created_at DESC, id DESC LIMIT 60",
+    [userId],
+    (err, notifications) => {
+      if (err) return res.status(500).send("Erro ao carregar notificações.");
+      db.run("UPDATE notifications SET is_read = 1 WHERE user_id = ? AND is_read = 0", [userId]);
+      return res.render("notifications", { notifications: notifications || [] });
+    }
+  );
+});
+
+app.post("/notifications/read-all", ensureAuthenticated, (req, res) => {
+  db.run(
+    "UPDATE notifications SET is_read = 1 WHERE user_id = ? AND is_read = 0",
+    [req.session.user.id],
+    () => res.redirect("/notifications")
+  );
+});
 
 app.get("/", (req, res) => {
   if (!req.session.user) {
@@ -328,11 +484,12 @@ app.post("/tickets", ensureAuthenticated, (req, res) => {
         nowTime,
         nowTime,
       ],
-      (err) => {
+      function onInsertTicket(err) {
         if (err) {
           console.error(err);
           return res.status(500).send("Erro ao abrir chamado.");
         }
+        notifyAdminsNewTicket(this.lastID, title, currentUser.operadora_id);
         res.redirect("/tickets");
       }
     );
@@ -556,6 +713,7 @@ app.post("/tickets/:id/status", ensureAuthenticated, requireRole(["agent", "admi
           console.error(err);
           return res.status(500).send("Erro ao atualizar status.");
         }
+        notifyRequesterStatusChange(Number(ticketId), status);
         return res.redirect(`/tickets/${ticketId}`);
       }
     );
@@ -691,6 +849,7 @@ app.post("/admin/tickets/:id/assign", ensureAuthenticated, requireRole(["admin"]
           ticketId,
           `Chamado #${ticketId} atualizado: status='${safeStatus}', assignee_id='${safeAssigneeId || "null"}'.`
         );
+        notifyRequesterStatusChange(ticketId, safeStatus);
         return res.redirect(redirectPath);
       }
     );
